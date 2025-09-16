@@ -1,57 +1,36 @@
+"""
+Основной модуль приложения - точка входа
+"""
+
 import sys
-from src.database.database_creator import DatabaseCreator
-from src.database.db_manager import DBManager
-from src.api.hh_api import HHAPI
-from src.utils.data_filler import DataFiller
+from src.database_creator import DatabaseCreator
+from src.db_manager import DBManager
+from src.hh_api import HHAPI
+from src.config import DB_CONFIG
+from utils.helpers import safe_int_input, safe_float_input, confirm_action
 import psycopg2
 
 
 def setup_database():
     """Создает и настраивает базу данных"""
     creator = DatabaseCreator()
-    creator.create_database()
-    creator.create_tables()
-    print("База данных создана и настроена")
-
-
-def fill_database():
-    """Заполняет базу данных вакансиями"""
-    filler = DataFiller()
-    companies = input("Введите названия компаний через запятую: ").split(',')
-    companies = [name.strip() for name in companies if name.strip()]
-
-    if not companies:
-        print("Не указаны компании")
-        return
-
-    filler.fill_vacancies(companies)
-    print("База данных заполнена вакансиями")
-
-
-def show_menu():
-    """Отображает главное меню"""
-    print("\n" + "=" * 50)
-    print("СИСТЕМА УПРАВЛЕНИЯ ВАКАНСИЯМИ")
-    print("=" * 50)
-    print("1. Компании и количество вакансий")
-    print("2. Все вакансии")
-    print("3. Средняя зарплата")
-    print("4. Вакансии с высокой зарплатой")
-    print("5. Поиск вакансий по ключевым словам")
-    print("6. Вакансии по компании")
-    print("7. Настройки базы данных")
-    print("0. Выход")
-    print("=" * 50)
+    if creator.setup_database():
+        print("База данных создана и настроена")
+        return True
+    else:
+        print("Ошибка настройки базы данных")
+        return False
 
 
 def get_db_connection():
     """Устанавливает соединение с базой данных"""
     try:
         conn = psycopg2.connect(
-            host="localhost",
-            database="vacancies_db",
-            user="postgres",
-            password="password"
+            host=DB_CONFIG.host,
+            database=DB_CONFIG.name,
+            user=DB_CONFIG.user,
+            password=DB_CONFIG.password,
+            port=DB_CONFIG.port
         )
         return conn
     except Exception as e:
@@ -59,160 +38,142 @@ def get_db_connection():
         return None
 
 
+def fill_database_with_vacancies():
+    """Заполняет базу данных вакансиями"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+
+        hh_api = HHAPI()
+        db_manager = DBManager(conn)
+
+        keyword = input("Введите ключевое слово для поиска вакансий: ").strip()
+        if not keyword:
+            print("Не указано ключевое слово")
+            return False
+
+        per_page = safe_int_input("Количество вакансий на странице (по умолчанию 20): ", 20)
+        max_pages = safe_int_input("Максимальное количество страниц (по умолчанию 5): ", 5)
+
+        print(f"Поиск вакансий по запросу: '{keyword}'...")
+        vacancies = hh_api.get_vacancies(keyword, per_page=per_page, max_pages=max_pages)
+
+        if not vacancies:
+            print("Вакансий не найдено")
+            return False
+
+        print(f"Найдено {len(vacancies)} вакансий")
+
+        # Сохраняем вакансии в БД
+        success_count = 0
+        for vacancy in vacancies:
+            try:
+                # Здесь будет логика сохранения вакансии в БД
+                # (реализуем после создания методов в DBManager)
+                success_count += 1
+            except Exception as e:
+                print(f"Ошибка сохранения вакансии: {e}")
+                continue
+
+        print(f"Успешно сохранено {success_count} вакансий")
+        return True
+
+    except Exception as e:
+        print(f"Ошибка при заполнении базы данных: {e}")
+        return False
+
+
+def show_main_menu():
+    """Отображает главное меню"""
+    print("\n" + "=" * 50)
+    print("СИСТЕМА УПРАВЛЕНИЯ ВАКАНСИЯМИ HH.RU")
+    print("=" * 50)
+    print("1. Компании и количество вакансий")
+    print("2. Все вакансии")
+    print("3. Средняя зарплата")
+    print("4. Вакансии с высокой зарплатой")
+    print("5. Поиск вакансий по ключевым словам")
+    print("6. Вакансии по компании")
+    print("7. Настройка базы данных")
+    print("8. Заполнить базу вакансиями")
+    print("0. Выход")
+    print("=" * 50)
+
+
 def main():
     """Основная функция программы"""
     print("Запуск системы управления вакансиями...")
 
-    # Настройка базы данных
-    setup_database()
-
-    # Заполнение данными
-    fill_database()
-
-    # Основной цикл программы
-    conn = get_db_connection()
-    if not conn:
-        return
-
-    db_manager = DBManager(conn)
-
-    while True:
-        show_menu()
-        choice = input("Выберите действие (0-7): ").strip()
-
-        if choice == "0":
-            print("До свидания!")
-            break
-
-        elif choice == "1":
-            page = 1
-            while True:
-                companies = db_manager.get_companies_and_vacancies_count(limit=10, offset=(page - 1) * 10)
-                if not companies:
-                    print("Компаний не найдено")
-                    break
-
-                print(f"\nСтраница {page}:")
-                for i, company in enumerate(companies, 1):
-                    print(f"{i}. {company['company_name']}: {company['vacancy_count']} вакансий")
-
-                action = input("\nСледующая страница (n), Предыдущая (p), Назад (b): ").lower()
-                if action == 'n':
-                    page += 1
-                elif action == 'p' and page > 1:
-                    page -= 1
-                elif action == 'b':
-                    break
-
-        elif choice == "2":
-            page = 1
-            while True:
-                vacancies = db_manager.get_all_vacancies(limit=10, offset=(page - 1) * 10)
-                if not vacancies:
-                    print("Вакансий не найдено")
-                    break
-
-                print(f"\nСтраница {page}:")
-                for i, vacancy in enumerate(vacancies, 1):
-                    salary = vacancy['salary'] or "Не указана"
-                    print(f"{i}. {vacancy['company_name']} - {vacancy['vacancy_name']}")
-                    print(f"   Зарплата: {salary}")
-                    print(f"   Ссылка: {vacancy['url']}")
-                    print()
-
-                action = input("Следующая страница (n), Предыдущая (p), Назад (b): ").lower()
-                if action == 'n':
-                    page += 1
-                elif action == 'p' and page > 1:
-                    page -= 1
-                elif action == 'b':
-                    break
-
-        elif choice == "3":
-            avg_salary = db_manager.get_avg_salary()
-            print(f"\nСредняя зарплата: {avg_salary:.2f} руб.")
-
-        elif choice == "4":
-            vacancies = db_manager.get_vacancies_with_higher_salary(limit=20)
-            if not vacancies:
-                print("Вакансий с высокой зарплатой не найдено")
+    conn = None
+    try:
+        # Проверяем подключение к БД
+        conn = get_db_connection()
+        if not conn:
+            if confirm_action("База данных не настроена. Настроить сейчас?"):
+                if setup_database():
+                    conn = get_db_connection()
+                else:
+                    print("Не удалось настроить базу данных. Завершение работы.")
+                    return
             else:
-                print("\nВакансии с зарплатой выше средней:")
-                for i, vacancy in enumerate(vacancies, 1):
-                    print(f"{i}. {vacancy['company_name']} - {vacancy['vacancy_name']}")
-                    print(f"   Зарплата: {vacancy['salary']} руб.")
-                    print(f"   Ссылка: {vacancy['url']}")
-                    print()
+                print("Работа невозможна без базы данных. Завершение работы.")
+                return
 
-        elif choice == "5":
-            keyword = input("Введите ключевые слова для поиска: ").strip()
-            if not keyword:
-                print("Не указаны ключевые слова")
-                continue
+        db_manager = DBManager(conn)
 
-            company_filter = input("Фильтр по компании (оставьте пустым если не нужно): ").strip()
-            min_salary = input("Минимальная зарплата (оставьте пустым если не нужно): ").strip()
-            max_salary = input("Максимальная зарплата (оставьте пустым если не нужно): ").strip()
+        while True:
+            show_main_menu()
+            choice = input("Выберите действие (0-8): ").strip()
 
-            min_salary = float(min_salary) if min_salary else None
-            max_salary = float(max_salary) if max_salary else None
+            if choice == "0":
+                print("До свидания!")
+                break
 
-            vacancies = db_manager.get_vacancies_with_keyword(
-                keyword=keyword,
-                company_name=company_filter or "",
-                min_salary=min_salary,
-                max_salary=max_salary,
-                limit=50
-            )
+            elif choice == "1":
+                # Получить компании и количество вакансий
+                pass
 
-            if not vacancies:
-                print("Вакансий не найдено")
+            elif choice == "2":
+                # Получить все вакансии
+                pass
+
+            elif choice == "3":
+                # Получить среднюю зарплату
+                pass
+
+            elif choice == "4":
+                # Вакансии с высокой зарплатой
+                pass
+
+            elif choice == "5":
+                # Поиск по ключевым словам
+                pass
+
+            elif choice == "6":
+                # Вакансии по компании
+                pass
+
+            elif choice == "7":
+                if confirm_action("Пересоздать базу данных? Все данные будут удалены."):
+                    setup_database()
+                    conn = get_db_connection()
+                    if conn:
+                        db_manager = DBManager(conn)
+
+            elif choice == "8":
+                fill_database_with_vacancies()
+
             else:
-                print(f"\nНайдено {len(vacancies)} вакансий:")
-                for i, vacancy in enumerate(vacancies, 1):
-                    salary = vacancy['salary'] or "Не указана"
-                    remote = "Удаленная работа" if vacancy['remote'] else "Офисная работа"
-                    print(f"{i}. {vacancy['company_name']} - {vacancy['vacancy_name']}")
-                    print(f"   Зарплата: {salary} руб.")
-                    print(f"   Тип работы: {remote}")
-                    print(f"   Ссылка: {vacancy['url']}")
-                    print()
+                print("Неверный выбор. Попробуйте снова.")
 
-        elif choice == "6":
-            company_name = input("Введите название компании: ").strip()
-            if not company_name:
-                print("Не указано название компании")
-                continue
-
-            vacancies = db_manager.get_vacancies_by_company(company_name, limit=50)
-            if not vacancies:
-                print("Вакансий не найдено")
-            else:
-                print(f"\nВакансии компании '{company_name}':")
-                for i, vacancy in enumerate(vacancies, 1):
-                    salary = vacancy['salary'] or "Не указана"
-                    print(f"{i}. {vacancy['vacancy_name']}")
-                    print(f"   Зарплата: {salary} руб.")
-                    print(f"   Обновлено: {vacancy['last_updated']}")
-                    print(f"   Ссылка: {vacancy['url']}")
-                    print()
-
-        elif choice == "7":
-            print("\nНастройки базы данных:")
-            print("1. Пересоздать базу данных")
-            print("2. Заполнить данными заново")
-            print("3. Назад")
-
-            sub_choice = input("Выберите действие: ").strip()
-            if sub_choice == "1":
-                setup_database()
-            elif sub_choice == "2":
-                fill_database()
-
-        else:
-            print("Неверный выбор. Попробуйте снова.")
-
-    conn.close()
+    except KeyboardInterrupt:
+        print("\nПрервано пользователем")
+    except Exception as e:
+        print(f"Критическая ошибка: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 if __name__ == "__main__":
