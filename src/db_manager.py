@@ -285,10 +285,11 @@ class DBManager:
                 params = []
 
                 if keyword:
-                    keyword_condition = self._prepare_keyword_condition(
+                    keyword_condition, keyword_params = self._prepare_keyword_condition(
                         keyword, search_fields, exact_match, operator
                     )
                     conditions.append(keyword_condition)
+                    params.extend(keyword_params)
 
                 if company_name:
                     conditions.append("LOWER(c.company_name) LIKE LOWER(%s)")
