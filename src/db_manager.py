@@ -371,11 +371,17 @@ class DBManager:
 
             for field in fields_to_search:
                 if exact_match:
-                    field_conditions.append(f"(LOWER(v.{field}) = LOWER('%{kw}%'))")
+                    # Используем параметризованный запрос для безопасности
+                    field_conditions.append(f"LOWER(v.{field}) = LOWER(%s)")
                 else:
-                    field_conditions.append(f"(LOWER(v.{field}) LIKE LOWER('%{kw}%'))")
+                    field_conditions.append(f"LOWER(v.{field}) LIKE LOWER(%s)")
 
             if field_conditions:
+                # Объединяем условия для одного слова через OR
                 conditions.append(f"({' OR '.join(field_conditions)})")
 
-        return f"({' AND '.join(conditions)})" if operator.upper() == "AND" else f"({' OR '.join(conditions)})"
+        # Объединяем условия для всех слов через выбранный оператор
+        if operator.upper() == "AND":
+            return " AND ".join(conditions)
+        else:
+            return " OR ".join(conditions)
