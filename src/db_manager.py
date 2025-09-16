@@ -8,6 +8,138 @@ class DBManager:
     def __init__(self, connection):
         self.connection = connection
 
+    def get_avg_salary(self) -> float:
+        """
+        Получает среднюю зарплату по вакансиям
+
+        :return: Средняя зарплата
+        """
+        try:
+            with self.connection.cursor() as cur:
+                query = """
+                    SELECT ROUND(AVG(salary), 2) as average_salary
+                    FROM vacancies
+                    WHERE salary IS NOT NULL AND salary > 0
+                """
+
+                cur.execute(query)
+                result = cur.fetchone()
+
+                return result[0] if result and result[0] is not None else 0.0
+
+        except Exception as e:
+            print(f"Ошибка при расчете средней зарплаты: {e}")
+            return 0.0
+
+    def save_vacancy(self, vacancy: Dict[str, Any], company_id: int) -> bool:
+        """
+        Сохраняет вакансию в базу данных
+
+        :param vacancy: Данные вакансии
+        :param company_id: ID компании
+        :return: True если успешно, False если ошибка
+        """
+        try:
+            with self.connection.cursor() as cur:
+                query = """
+                    INSERT INTO vacancies (
+                        url, company_id, vacancy_name, requirements,
+                        salary, remote, experience, currency
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (url) DO UPDATE SET
+                        vacancy_name = EXCLUDED.vacancy_name,
+                        requirements = EXCLUDED.requirements,
+                        salary = EXCLUDED.salary,
+                        remote = EXCLUDED.remote,
+                        experience = EXCLUDED.experience,
+                        last_updated = CURRENT_TIMESTAMP
+                """
+
+                params = (
+                    vacancy['url'],
+                    company_id,
+                    vacancy['title'],
+                    vacancy['description'],
+                    vacancy.get('salary'),
+                    vacancy.get('remote', False),
+                    vacancy.get('experience', 'не указан'),
+                    vacancy.get('currency', 'RUR')
+                )
+
+                cur.execute(query, params)
+                self.connection.commit()
+                return True
+
+        except Exception as e:
+            print(f"Ошибка при сохранении вакансии: {e}")
+            return False
+
+    def save_company(self, company: Dict[str, Any]) -> bool:
+        """
+        Сохраняет компанию в базу данных
+
+        :param company: Данные компании
+        :return: True если успешно, False если ошибка
+        """
+        try:
+            with self.connection.cursor() as cur:
+                query = """
+                    INSERT INTO companies (company_id, company_name, site_url)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (company_id) DO UPDATE SET
+                        company_name = EXCLUDED.company_name,
+                        site_url = EXCLUDED.site_url
+                """
+
+                params = (
+                    company['company_id'],
+                    company['company_name'],
+                    company.get('site_url', '')
+                )
+
+                cur.execute(query, params)
+                self.connection.commit()
+                return True
+
+        except Exception as e:
+            print(f"Ошибка при сохранении компании: {e}")
+            return False
+
+    def company_exists(self, company_id: int) -> bool:
+        """
+        Проверяет существование компании в БД
+
+        :param company_id: ID компании
+        :return: True если существует, False если нет
+        """
+        try:
+            with self.connection.cursor() as cur:
+                query = "SELECT 1 FROM companies WHERE company_id = %s"
+                cur.execute(query, (company_id,))
+                return cur.fetchone() is not None
+
+        except Exception as e:
+            print(f"Ошибка при проверке компании: {e}")
+            return False
+
+    def vacancy_exists(self, url: str) -> bool:
+        """
+        Проверяет существование вакансии в БД
+
+        :param url: URL вакансии
+        :return: True если существует, False если нет
+        """
+        try:
+            with self.connection.cursor() as cur:
+                query = "SELECT 1 FROM vacancies WHERE url = %s"
+                cur.execute(query, (url,))
+                return cur.fetchone() is not None
+
+        except Exception as e:
+            print(f"Ошибка при проверке вакансии: {e}")
+            return False
+
     def get_vacancies_by_company(self, company_name: str,
                                  limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
         """
