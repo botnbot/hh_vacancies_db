@@ -31,21 +31,16 @@ class DatabaseCreator:
     def create_database(self):
         """Создает базу данных если не существует"""
         try:
-            # Подключаемся к postgres для создания БД
             conn = self.get_connection("postgres")
             if not conn:
                 return False
-
             conn.autocommit = True
             cur = conn.cursor()
-
-            # Проверяем существование БД
             cur.execute(
                 "SELECT 1 FROM pg_database WHERE datname = %s",
                 (self.config.name,)
             )
             exists = cur.fetchone()
-
             if not exists:
                 cur.execute(
                     sql.SQL("CREATE DATABASE {}").format(
@@ -55,11 +50,9 @@ class DatabaseCreator:
                 print(f"База данных {self.config.name} создана")
             else:
                 print(f"База данных {self.config.name} уже существует")
-
             cur.close()
             conn.close()
             return True
-
         except Exception as e:
             print(f"Ошибка при создании БД: {e}")
             return False
