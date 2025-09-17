@@ -12,7 +12,7 @@ class DatabaseConfig:
     port: str = os.getenv("DB_PORT", "5432")
     name: str = os.getenv("DB_NAME", "hh_vacancies")
     user: str = os.getenv("DB_USER", "postgres")
-    password: str = os.getenv("DB_PASSWORD", "password")
+    password: str = os.getenv("DB_PASSWORD", "0055")
 
 @dataclass
 class APIConfig:
@@ -21,6 +21,6 @@ class APIConfig:
     timeout: int = 30
     user_agent: str = "HHVacancyParser/1.0"
 
-# Создаем экземпляры конфигурации
+
 DB_CONFIG = DatabaseConfig()
 API_CONFIG = APIConfig()
