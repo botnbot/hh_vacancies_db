@@ -1,12 +1,22 @@
-from typing import Any
+from typing import Any, Optional
 
 
 class Company:
-    """Класс для представления компании"""
+    """
+    Класс для представления компании.
 
-    def __init__(self, company_name: str, company_id: str, site_url: str = ""):
+    :param company_name: Название компании.
+    :param company_id: Уникальный идентификатор компании (из API hh.ru).
+    :param site_url: Сайт компании (опционально).
+    """
+
+    def __init__(self, company_name: str, company_id: Optional[str | int], site_url: str = ""):
+        if not company_id:
+            print(f" Компания '{company_name}' пропущена: отсутствует company_id")
+            self.company_id = ""
+        else:
+            self.company_id = str(company_id)
         self.company_name = company_name.strip() or "Без названия"
-        self.company_id = str(company_id) if company_id else ""
         self.site_url = site_url.strip()
 
     def __repr__(self) -> str:
@@ -14,6 +24,8 @@ class Company:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Company):
+            return False
+        if not self.company_id or not other.company_id:
             return False
         return self.company_id == other.company_id
 
