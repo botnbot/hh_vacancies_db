@@ -31,15 +31,17 @@ class DBManager:
             print(f"Ошибка при расчете средней зарплаты: {e}")
             return 0.0
 
-    def save_vacancy(self, vacancy: Dict[str, Any], company_id: int) -> bool:
+
+    def save_vacancy(self, vacancy: dict, company_id: int) -> bool:
         """
         Сохраняет вакансию в базу данных
-
-        :param vacancy: Данные вакансии
-        :param company_id: ID компании
-        :return: True если успешно, False если ошибка
         """
         try:
+            # Проверяем обязательные поля
+            if not vacancy.get('url') or not vacancy.get('title') or not company_id:
+                print(f"Пропускаем вакансию с отсутствующими данными: {vacancy}")
+                return False
+
             with self.connection.cursor() as cur:
                 query = """
                     INSERT INTO vacancies (
@@ -53,6 +55,7 @@ class DBManager:
                         salary = EXCLUDED.salary,
                         remote = EXCLUDED.remote,
                         experience = EXCLUDED.experience,
+                        currency = EXCLUDED.currency,
                         last_updated = CURRENT_TIMESTAMP
                 """
 
@@ -60,7 +63,7 @@ class DBManager:
                     vacancy['url'],
                     company_id,
                     vacancy['title'],
-                    vacancy['description'],
+                    vacancy.get('description', '') or vacancy.get('requirements', ''),
                     vacancy.get('salary'),
                     vacancy.get('remote', False),
                     vacancy.get('experience', 'не указан'),
@@ -68,14 +71,13 @@ class DBManager:
                 )
 
                 cur.execute(query, params)
-                self.connection.commit()
                 return True
 
         except Exception as e:
-            print(f"Ошибка при сохранении вакансии: {e}")
+            print(f"Ошибка при сохранении вакансии {vacancy.get('url', 'unknown')}: {e}")
             return False
 
-    def save_company(self, company: Dict[str, Any]) -> bool:
+    def save_company(self, company: dict) -> bool:
         """
         Сохраняет компанию в базу данных
 
@@ -99,7 +101,6 @@ class DBManager:
                 )
 
                 cur.execute(query, params)
-                self.connection.commit()
                 return True
 
         except Exception as e:
@@ -141,7 +142,7 @@ class DBManager:
             return False
 
     def get_vacancies_by_company(self, company_name: str,
-                                 limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+                                 limit: int = 50, offset: int = 0) -> list:
         """
         Получает вакансии конкретной компании с пагинацией
 
@@ -182,7 +183,7 @@ class DBManager:
             print(f"Ошибка при поиске вакансий компании: {e}")
             return []
 
-    def get_companies_and_vacancies_count(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_companies_and_vacancies_count(self, limit: int = 100, offset: int = 0) -> list:
         """
         Получает список компаний и количество вакансий с пагинацией
         """
@@ -209,7 +210,7 @@ class DBManager:
             print(f"Ошибка при получении списка компаний: {e}")
             return []
 
-    def get_all_vacancies(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_all_vacancies(self, limit: int = 100, offset: int = 0) -> list:
         """
         Получает список всех вакансий с пагинацией
         """
@@ -240,7 +241,7 @@ class DBManager:
             print(f"Ошибка при получении списка вакансий: {e}")
             return []
 
-    def get_vacancies_with_higher_salary(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_vacancies_with_higher_salary(self, limit: int = 100, offset: int = 0) -> list:
         """
         Получает вакансии с зарплатой выше средней с пагинацией
         """
@@ -275,7 +276,7 @@ class DBManager:
     def get_vacancies_with_keyword(self, keyword: str = "", company_name: str = "",
                                    min_salary: float = None, max_salary: float = None,
                                    search_fields: List[str] = None, exact_match: bool = False,
-                                   operator: str = "OR", limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+                                   operator: str = "OR", limit: int = 100, offset: int = 0) -> list:
         """
         Расширенный поиск вакансий с пагинацией
         """
@@ -354,35 +355,145 @@ class DBManager:
             print(f"Ошибка при получении количества записей: {e}")
             return 0
 
-    def _prepare_keyword_condition(self, keyword: str, search_fields: List[str],
-                                   exact_match: bool, operator: str) -> str:
+    def _prepare_keyword_condition(self, keyword: str, search_fields: list,
+                                   exact_match: bool, operator: str) -> tuple:
         """Вспомогательный метод для подготовки условия поиска"""
         default_fields = ['vacancy_name', 'requirements', 'experience']
         fields_to_search = search_fields if search_fields else default_fields
 
         keywords = [k.strip() for k in keyword.split() if k.strip()]
+        params = []
 
         if not keywords:
-            return "1=1"
+            return "1=1", params
 
         conditions = []
 
         for kw in keywords:
             field_conditions = []
+            kw_params = []
 
             for field in fields_to_search:
                 if exact_match:
-                    # Используем параметризованный запрос для безопасности
                     field_conditions.append(f"LOWER(v.{field}) = LOWER(%s)")
+                    kw_params.append(kw)
                 else:
                     field_conditions.append(f"LOWER(v.{field}) LIKE LOWER(%s)")
+                    kw_params.append(f"%{kw}%")
 
             if field_conditions:
-                # Объединяем условия для одного слова через OR
                 conditions.append(f"({' OR '.join(field_conditions)})")
+                params.extend(kw_params)
 
-        # Объединяем условия для всех слов через выбранный оператор
-        if operator.upper() == "AND":
-            return " AND ".join(conditions)
+        if operator.upper() == "AND" and conditions:
+            final_condition = " AND ".join(conditions)
+        elif conditions:
+            final_condition = " OR ".join(conditions)
         else:
-            return " OR ".join(conditions)
+            final_condition = "1=1"
+
+        return final_condition, params
+
+    def save_vacancies(self, vacancies: list) -> int:
+        """
+        Сохраняет список вакансий в базу данных.
+
+        :param vacancies: Список объектов Vacancy
+        :return: Количество успешно сохранённых вакансий
+        """
+        saved_count = 0
+        try:
+            with self.connection.cursor() as cur:
+                for vacancy in vacancies:
+                    company_id = getattr(vacancy, 'company_id', None)
+                    if not company_id:
+                        print(f"[WARNING] Пропускаем вакансию без company_id: {getattr(vacancy, 'title', 'Unknown')}")
+                        continue
+
+                    # Сохраняем компанию, если она ещё не существует
+                    if not self.company_exists(company_id):
+                        company_name = getattr(vacancy, 'company_name', 'Неизвестная компания')
+                        company_url = getattr(vacancy, 'company_url', '') or getattr(vacancy, 'site_url', '')
+                        company_data = {
+                            'company_id': company_id,
+                            'company_name': company_name,
+                            'site_url': company_url
+                        }
+                        self.save_company(company_data)
+
+                    salary = self._calculate_salary(vacancy)
+                    vacancy_data = {
+                        'url': getattr(vacancy, 'url', ''),
+                        'title': getattr(vacancy, 'title', 'Без названия'),
+                        'description': getattr(vacancy, 'description', '') or getattr(vacancy, 'requirements', ''),
+                        'salary': salary,
+                        'remote': getattr(vacancy, 'remote', False),
+                        'experience': getattr(vacancy, 'experience', 'не указан'),
+                        'currency': getattr(vacancy, 'currency', 'RUR')
+                    }
+
+                    if not vacancy_data['url'] or not vacancy_data['title']:
+                        print(f"[WARNING] Пропускаем вакансию с отсутствующими обязательными полями")
+                        continue
+
+                    if self.save_vacancy(vacancy_data, company_id):
+                        saved_count += 1
+
+                self.connection.commit()
+        except Exception as e:
+            self.connection.rollback()
+            print(f"[ERROR] Ошибка при сохранении вакансий: {e}")
+            import traceback
+            traceback.print_exc()
+
+        return saved_count
+
+    def _calculate_salary(self, vacancy) -> float | None:
+        """
+        Вычисляет среднюю зарплату для объекта Vacancy.
+
+        :param vacancy: Объект Vacancy
+        :return: Средняя зарплата или None
+        """
+        try:
+            if hasattr(vacancy, 'salary_range'):
+                salary_from, salary_to = vacancy.salary_range
+                if salary_from and salary_to:
+                    return (float(salary_from) + float(salary_to)) / 2
+                elif salary_from:
+                    return float(salary_from)
+                elif salary_to:
+                    return float(salary_to)
+            return None
+        except (ValueError, TypeError):
+            return None
+
+    def check_tables_exist(self) -> bool:
+        """
+        Проверяет существование таблиц в базе данных
+        """
+        try:
+            with self.connection.cursor() as cur:
+                cur.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'vacancies'
+                    )
+                """)
+                vacancies_exists = cur.fetchone()[0]
+
+                cur.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'companies'
+                    )
+                """)
+                companies_exists = cur.fetchone()[0]
+
+                return vacancies_exists and companies_exists
+
+        except Exception as e:
+            print(f"Ошибка проверки таблиц: {e}")
+            return False
