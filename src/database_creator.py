@@ -1,10 +1,7 @@
-"""
-Модуль для создания базы данных и таблиц
-"""
 
 import psycopg2
 from psycopg2 import sql
-from src.config import DB_CONFIG
+from config import DB_CONFIG
 
 
 class DatabaseCreator:
@@ -96,17 +93,6 @@ class DatabaseCreator:
                         REFERENCES companies(company_id) 
                         ON DELETE CASCADE
                 )
-            """)
-
-            # Индексы для ускорения поиска
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_vacancies_company 
-                ON vacancies(company_id)
-            """)
-
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS idx_vacancies_salary 
-                ON vacancies(salary)
             """)
 
             conn.commit()
