@@ -2,8 +2,11 @@
 Основной модуль приложения - точка входа
 """
 
-import sys
 import os
+import sys
+from typing import Optional, Any
+from psycopg2.extensions import connection
+
 import psycopg2
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -12,11 +15,11 @@ if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
 try:
+    from config import DB_CONFIG
     from database_creator import DatabaseCreator
     from db_manager import DBManager
     from hh_api import HHAPI
-    from config import DB_CONFIG
-    from utils.helpers import safe_int_input, safe_float_input, confirm_action, paginate_items, format_salary
+    from utils.helpers import confirm_action, format_salary, safe_float_input, safe_int_input
 except ImportError as e:
     print(f"Ошибка импорта модулей: {e}")
     print("Проверьте структуру проекта:")
@@ -40,7 +43,8 @@ def setup_database() -> bool:
         return False
 
 
-def get_db_connection():
+
+def get_db_connection() -> Optional[connection]:
     """Устанавливает соединение с базой данных"""
     try:
         conn = psycopg2.connect(
@@ -60,7 +64,7 @@ def get_db_connection():
         return None
 
 
-def check_tables_exist(db_manager: DBManager) -> bool:
+def check_tables_exist(db_manager: DBManager) -> Optional[bool]:
     """Проверяет существование таблиц в базе данных"""
     try:
         if not db_manager.check_tables_exist():
@@ -72,7 +76,7 @@ def check_tables_exist(db_manager: DBManager) -> bool:
         return False
 
 
-def fill_database_with_vacancies(db_manager: DBManager) -> bool:
+def fill_database_with_vacancies(db_manager: DBManager) -> Any:
     """Заполняет базу данных вакансиями"""
     if not check_tables_exist(db_manager):
         return False
@@ -198,7 +202,7 @@ def show_high_salary_vacancies(db_manager: DBManager) -> None:
         print("Вакансий с высокой зарплатой не найдено")
         return
 
-    print(f"\nВакансии с зарплатой выше средней:")
+    print("\nВакансии с зарплатой выше средней:")
     print("-" * 80)
     for i, vac in enumerate(vacancies, 1):
         salary = format_salary(vac["salary"])
@@ -240,29 +244,29 @@ def search_vacancies_by_keyword(db_manager: DBManager) -> None:
 
 
 def show_vacancies_by_company(db_manager: DBManager) -> None:
-    """Показывает все вакансии  компании"""
+    """Выводит вакансии выбранной компании"""
     company_name = input("Введите название компании: ").strip()
     if not company_name:
-        print("Не указано название компании")
+        print("Название компании не может быть пустым")
         return
 
-    vacancies = db_manager.get_vacancies_by_company(company_name, limit=50)
-
+    vacancies = db_manager.get_vacancies_by_company(company_name)
     if not vacancies:
-        print("Вакансий не найдено")
+        print(f"Вакансии компании '{company_name}' не найдены")
         return
 
     print(f"\nВакансии компании '{company_name}':")
     print("-" * 80)
-    for i, vac in enumerate(vacancies, 1):
-        salary = format_salary(vac["salary"])
-        if vac["remote"]:
-            remote = "Удаленная"
-        print(f"{i}. {vac['vacancy_name']}")
-        print(f"   {salary} | {remote}")
-        print(f"   {vac['experience']}")
-        print(f"   {vac['url']}")
-        print()
+    for idx, vac in enumerate(vacancies, start=1):
+        title = vac.get("vacancy_name", "Без названия")
+        salary = format_salary(vac.get("salary"))
+        remote = vac.get("remote", "не указано")
+        experience = vac.get("experience", "не указано")
+        url = vac.get("url", "")
+        print(f"{idx}. {title}")
+        print(f"   Зарплата: {salary} | Удалённая работа: {remote} | Опыт: {experience}")
+        print(f"   Ссылка: {url}\n")
+
 
 
 def show_main_menu() -> None:
@@ -291,7 +295,7 @@ def main() -> None:
         conn = get_db_connection()
         if not conn:
             print("Не удалось подключиться к БД. Завершение работы.")
-            return
+            exit()
 
         db_manager = DBManager(conn)
 
