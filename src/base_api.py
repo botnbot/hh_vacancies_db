@@ -14,4 +14,3 @@ class BaseAPI(ABC):
     def get_vacancies(self, keyword: str, per_page: int = 20, max_pages: int = 5) -> list["Vacancy"]:
         """Получение списка вакансий по ключевому слову"""
         pass
-

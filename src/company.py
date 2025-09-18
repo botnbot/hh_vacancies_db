@@ -30,8 +30,4 @@ class Company:
         return self.company_id == other.company_id
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "company_name": self.company_name,
-            "company_id": self.company_id,
-            "site_url": self.site_url
-        }
+        return {"company_name": self.company_name, "company_id": self.company_id, "site_url": self.site_url}

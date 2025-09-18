@@ -1,4 +1,3 @@
-
 import psycopg2
 from psycopg2 import sql
 from config import DB_CONFIG
@@ -18,7 +17,7 @@ class DatabaseCreator:
                 port=self.config.port,
                 database=database_name or self.config.name,
                 user=self.config.user,
-                password=self.config.password
+                password=self.config.password,
             )
             return conn
         except Exception as e:
@@ -33,17 +32,10 @@ class DatabaseCreator:
                 return False
             conn.autocommit = True
             cur = conn.cursor()
-            cur.execute(
-                "SELECT 1 FROM pg_database WHERE datname = %s",
-                (self.config.name,)
-            )
+            cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (self.config.name,))
             exists = cur.fetchone()
             if not exists:
-                cur.execute(
-                    sql.SQL("CREATE DATABASE {}").format(
-                        sql.Identifier(self.config.name)
-                    )
-                )
+                cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(self.config.name)))
                 print(f"База данных {self.config.name} создана")
             else:
                 print(f"База данных {self.config.name} уже существует")
@@ -64,7 +56,8 @@ class DatabaseCreator:
             cur = conn.cursor()
 
             # Таблица компаний
-            cur.execute("""
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS companies (
                     company_id INTEGER PRIMARY KEY,
                     company_name VARCHAR(255) NOT NULL,
@@ -74,10 +67,12 @@ class DatabaseCreator:
                     email VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Таблица вакансий
-            cur.execute("""
+            cur.execute(
+                """
                 CREATE TABLE IF NOT EXISTS vacancies (
                     url VARCHAR(255) PRIMARY KEY,
                     company_id INTEGER NOT NULL,
@@ -93,7 +88,8 @@ class DatabaseCreator:
                         REFERENCES companies(company_id) 
                         ON DELETE CASCADE
                 )
-            """)
+            """
+            )
 
             conn.commit()
             cur.close()

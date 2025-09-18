@@ -8,22 +8,28 @@ class Vacancy:
     """Класс вакансии с приватными атрибутами и методами валидации"""
 
     __slots__ = (
-        "__title", "__url", "__description", "__salary_range",
-        "__experience", "__remote",
-        "company_id", "company_name", "currency"
+        "__title",
+        "__url",
+        "__description",
+        "__salary_range",
+        "__experience",
+        "__remote",
+        "company_id",
+        "company_name",
+        "currency",
     )
 
     def __init__(
-            self,
-            title: str,
-            url: str,
-            description: str,
-            salary_range: tuple | int,
-            experience: str = "не указан",
-            remote: bool = False,
-            company_id: str | None = None,
-            company_name: str | None = None,
-            currency: str = "RUR"
+        self,
+        title: str,
+        url: str,
+        description: str,
+        salary_range: tuple | int,
+        experience: str = "не указан",
+        remote: bool = False,
+        company_id: str | None = None,
+        company_name: str | None = None,
+        currency: str = "RUR",
     ) -> None:
         self.__title = self.__validate_string(title, "Без названия")
         self.__url = self.__validate_string(url, "")
@@ -136,7 +142,7 @@ class Vacancy:
             "remote": self.__remote,
             "company_id": self.company_id,
             "company_name": self.company_name,
-            "currency": self.currency
+            "currency": self.currency,
         }
 
     @classmethod
@@ -150,5 +156,5 @@ class Vacancy:
             remote=data.get("remote", False),
             company_id=data.get("company_id"),
             company_name=data.get("company_name"),
-            currency=data.get("currency", "RUR")
+            currency=data.get("currency", "RUR"),
         )

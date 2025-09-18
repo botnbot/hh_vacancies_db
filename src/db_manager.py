@@ -31,14 +31,13 @@ class DBManager:
             print(f"Ошибка при расчете средней зарплаты: {e}")
             return 0.0
 
-
     def save_vacancy(self, vacancy: dict, company_id: int) -> bool:
         """
         Сохраняет вакансию в базу данных
         """
         try:
             # Проверяем обязательные поля
-            if not vacancy.get('url') or not vacancy.get('title') or not company_id:
+            if not vacancy.get("url") or not vacancy.get("title") or not company_id:
                 print(f"Пропускаем вакансию с отсутствующими данными: {vacancy}")
                 return False
 
@@ -60,14 +59,14 @@ class DBManager:
                 """
 
                 params = (
-                    vacancy['url'],
+                    vacancy["url"],
                     company_id,
-                    vacancy['title'],
-                    vacancy.get('description', '') or vacancy.get('requirements', ''),
-                    vacancy.get('salary'),
-                    vacancy.get('remote', False),
-                    vacancy.get('experience', 'не указан'),
-                    vacancy.get('currency', 'RUR')
+                    vacancy["title"],
+                    vacancy.get("description", "") or vacancy.get("requirements", ""),
+                    vacancy.get("salary"),
+                    vacancy.get("remote", False),
+                    vacancy.get("experience", "не указан"),
+                    vacancy.get("currency", "RUR"),
                 )
 
                 cur.execute(query, params)
@@ -94,11 +93,7 @@ class DBManager:
                         site_url = EXCLUDED.site_url
                 """
 
-                params = (
-                    company['company_id'],
-                    company['company_name'],
-                    company.get('site_url', '')
-                )
+                params = (company["company_id"], company["company_name"], company.get("site_url", ""))
 
                 cur.execute(query, params)
                 return True
@@ -141,8 +136,7 @@ class DBManager:
             print(f"Ошибка при проверке вакансии: {e}")
             return False
 
-    def get_vacancies_by_company(self, company_name: str,
-                                 limit: int = 50, offset: int = 0) -> list:
+    def get_vacancies_by_company(self, company_name: str, limit: int = 50, offset: int = 0) -> list:
         """
         Получает вакансии конкретной компании с пагинацией
 
@@ -168,13 +162,13 @@ class DBManager:
 
                 return [
                     {
-                        'vacancy_name': row[0],
-                        'salary': row[1],
-                        'url': row[2],
-                        'requirements': row[3],
-                        'experience': row[4],
-                        'remote': row[5],
-                        'last_updated': row[6]
+                        "vacancy_name": row[0],
+                        "salary": row[1],
+                        "url": row[2],
+                        "requirements": row[3],
+                        "experience": row[4],
+                        "remote": row[5],
+                        "last_updated": row[6],
                     }
                     for row in results
                 ]
@@ -201,10 +195,7 @@ class DBManager:
                 cur.execute(query, (limit, offset))
                 results = cur.fetchall()
 
-                return [
-                    {'company_name': row[0], 'vacancy_count': row[1]}
-                    for row in results
-                ]
+                return [{"company_name": row[0], "vacancy_count": row[1]} for row in results]
 
         except Exception as e:
             print(f"Ошибка при получении списка компаний: {e}")
@@ -228,12 +219,7 @@ class DBManager:
                 results = cur.fetchall()
 
                 return [
-                    {
-                        'company_name': row[0],
-                        'vacancy_name': row[1],
-                        'salary': row[2],
-                        'url': row[3]
-                    }
+                    {"company_name": row[0], "vacancy_name": row[1], "salary": row[2], "url": row[3]}
                     for row in results
                 ]
 
@@ -260,12 +246,7 @@ class DBManager:
                 results = cur.fetchall()
 
                 return [
-                    {
-                        'company_name': row[0],
-                        'vacancy_name': row[1],
-                        'salary': row[2],
-                        'url': row[3]
-                    }
+                    {"company_name": row[0], "vacancy_name": row[1], "salary": row[2], "url": row[3]}
                     for row in results
                 ]
 
@@ -273,10 +254,18 @@ class DBManager:
             print(f"Ошибка при поиске вакансий с высокой зарплатой: {e}")
             return []
 
-    def get_vacancies_with_keyword(self, keyword: str = "", company_name: str = "",
-                                   min_salary: float = None, max_salary: float = None,
-                                   search_fields: List[str] = None, exact_match: bool = False,
-                                   operator: str = "OR", limit: int = 100, offset: int = 0) -> list:
+    def get_vacancies_with_keyword(
+        self,
+        keyword: str = "",
+        company_name: str = "",
+        min_salary: float = None,
+        max_salary: float = None,
+        search_fields: List[str] = None,
+        exact_match: bool = False,
+        operator: str = "OR",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list:
         """
         Расширенный поиск вакансий с пагинацией
         """
@@ -322,13 +311,13 @@ class DBManager:
 
                 return [
                     {
-                        'company_name': row[0],
-                        'vacancy_name': row[1],
-                        'salary': row[2],
-                        'url': row[3],
-                        'requirements': row[4],
-                        'experience': row[5],
-                        'remote': row[6]
+                        "company_name": row[0],
+                        "vacancy_name": row[1],
+                        "salary": row[2],
+                        "url": row[3],
+                        "requirements": row[4],
+                        "experience": row[5],
+                        "remote": row[6],
                     }
                     for row in results
                 ]
@@ -355,10 +344,9 @@ class DBManager:
             print(f"Ошибка при получении количества записей: {e}")
             return 0
 
-    def _prepare_keyword_condition(self, keyword: str, search_fields: list,
-                                   exact_match: bool, operator: str) -> tuple:
+    def _prepare_keyword_condition(self, keyword: str, search_fields: list, exact_match: bool, operator: str) -> tuple:
         """Вспомогательный метод для подготовки условия поиска"""
-        default_fields = ['vacancy_name', 'requirements', 'experience']
+        default_fields = ["vacancy_name", "requirements", "experience"]
         fields_to_search = search_fields if search_fields else default_fields
 
         keywords = [k.strip() for k in keyword.split() if k.strip()]
@@ -405,34 +393,34 @@ class DBManager:
         try:
             with self.connection.cursor() as cur:
                 for vacancy in vacancies:
-                    company_id = getattr(vacancy, 'company_id', None)
+                    company_id = getattr(vacancy, "company_id", None)
                     if not company_id:
                         print(f"[WARNING] Пропускаем вакансию без company_id: {getattr(vacancy, 'title', 'Unknown')}")
                         continue
 
                     # Сохраняем компанию, если она ещё не существует
                     if not self.company_exists(company_id):
-                        company_name = getattr(vacancy, 'company_name', 'Неизвестная компания')
-                        company_url = getattr(vacancy, 'company_url', '') or getattr(vacancy, 'site_url', '')
+                        company_name = getattr(vacancy, "company_name", "Неизвестная компания")
+                        company_url = getattr(vacancy, "company_url", "") or getattr(vacancy, "site_url", "")
                         company_data = {
-                            'company_id': company_id,
-                            'company_name': company_name,
-                            'site_url': company_url
+                            "company_id": company_id,
+                            "company_name": company_name,
+                            "site_url": company_url,
                         }
                         self.save_company(company_data)
 
                     salary = self._calculate_salary(vacancy)
                     vacancy_data = {
-                        'url': getattr(vacancy, 'url', ''),
-                        'title': getattr(vacancy, 'title', 'Без названия'),
-                        'description': getattr(vacancy, 'description', '') or getattr(vacancy, 'requirements', ''),
-                        'salary': salary,
-                        'remote': getattr(vacancy, 'remote', False),
-                        'experience': getattr(vacancy, 'experience', 'не указан'),
-                        'currency': getattr(vacancy, 'currency', 'RUR')
+                        "url": getattr(vacancy, "url", ""),
+                        "title": getattr(vacancy, "title", "Без названия"),
+                        "description": getattr(vacancy, "description", "") or getattr(vacancy, "requirements", ""),
+                        "salary": salary,
+                        "remote": getattr(vacancy, "remote", False),
+                        "experience": getattr(vacancy, "experience", "не указан"),
+                        "currency": getattr(vacancy, "currency", "RUR"),
                     }
 
-                    if not vacancy_data['url'] or not vacancy_data['title']:
+                    if not vacancy_data["url"] or not vacancy_data["title"]:
                         print(f"[WARNING] Пропускаем вакансию с отсутствующими обязательными полями")
                         continue
 
@@ -444,6 +432,7 @@ class DBManager:
             self.connection.rollback()
             print(f"[ERROR] Ошибка при сохранении вакансий: {e}")
             import traceback
+
             traceback.print_exc()
 
         return saved_count
@@ -456,7 +445,7 @@ class DBManager:
         :return: Средняя зарплата или None
         """
         try:
-            if hasattr(vacancy, 'salary_range'):
+            if hasattr(vacancy, "salary_range"):
                 salary_from, salary_to = vacancy.salary_range
                 if salary_from and salary_to:
                     return (float(salary_from) + float(salary_to)) / 2
@@ -474,22 +463,26 @@ class DBManager:
         """
         try:
             with self.connection.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
                         WHERE table_schema = 'public' 
                         AND table_name = 'vacancies'
                     )
-                """)
+                """
+                )
                 vacancies_exists = cur.fetchone()[0]
 
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
                         WHERE table_schema = 'public' 
                         AND table_name = 'companies'
                     )
-                """)
+                """
+                )
                 companies_exists = cur.fetchone()[0]
 
                 return vacancies_exists and companies_exists

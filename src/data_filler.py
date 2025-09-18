@@ -6,8 +6,14 @@ from src.db_manager import DBManager
 class DataFiller:
     """Класс для заполнения базы данных данными"""
 
-    def __init__(self, db_name: str = "hh_vacancies", user: str = "postgres",
-                 password: str = "password", host: str = "localhost", port: int = 5432):
+    def __init__(
+        self,
+        db_name: str = "hh_vacancies",
+        user: str = "postgres",
+        password: str = "password",
+        host: str = "localhost",
+        port: int = 5432,
+    ):
         self.db_name = db_name
         self.user = user
         self.password = password
@@ -18,11 +24,7 @@ class DataFiller:
         """Устанавливает соединение с базой данных"""
         try:
             conn = psycopg2.connect(
-                host=self.host,
-                port=self.port,
-                database=self.db_name,
-                user=self.user,
-                password=self.password
+                host=self.host, port=self.port, database=self.db_name, user=self.user, password=self.password
             )
             conn.autocommit = False
             return conn
@@ -54,9 +56,7 @@ class DataFiller:
                 print(f" Получение вакансий для компании: {company.company_name}")
 
                 vacancies, companies_data = hh_api.get_vacancies_with_companies(
-                    keyword=company.company_name,
-                    per_page=per_page,
-                    max_pages=max_pages
+                    keyword=company.company_name, per_page=per_page, max_pages=max_pages
                 )
 
                 print(f" Найдено {len(vacancies)} вакансий для {company.company_name}")

@@ -1,6 +1,7 @@
 """
 Вспомогательные утилиты для проекта hh_vacancies_db
 """
+
 import textwrap
 from typing import Any, Dict, List, Optional
 
@@ -18,7 +19,7 @@ def format_salary(salary: Optional[float]) -> str:
     if salary is None or salary == 0:
         return "Не указана"
 
-    return f"{salary:,.0f} руб.".replace(',', ' ')
+    return f"{salary:,.0f} руб.".replace(",", " ")
 
 
 def truncate_text(text: str, max_length: int = 100) -> str:
@@ -38,7 +39,7 @@ def truncate_text(text: str, max_length: int = 100) -> str:
     if len(text) <= max_length:
         return text
 
-    return text[:max_length - 3] + "..."
+    return text[: max_length - 3] + "..."
 
 
 def paginate_items(items: List[Any], page: int, per_page: int = 10) -> tuple[List[Any], int, int]:
@@ -119,7 +120,8 @@ def confirm_action(prompt: str) -> bool:
         bool: True если пользователь подтвердил, иначе False
     """
     response = input(f"{prompt} (y/n): ").strip().lower()
-    return response in ['y', 'yes', 'да', 'д']
+    return response in ["y", "yes", "да", "д"]
+
 
 def wrap_text(text: str, width: int = 120) -> str:
     """

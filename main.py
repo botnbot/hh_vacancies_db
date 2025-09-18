@@ -7,7 +7,7 @@ import os
 import psycopg2
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-src_path = os.path.join(current_dir, 'src')
+src_path = os.path.join(current_dir, "src")
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
@@ -48,7 +48,7 @@ def get_db_connection():
             database=DB_CONFIG.name,
             user=DB_CONFIG.user,
             password=DB_CONFIG.password,
-            port=DB_CONFIG.port
+            port=DB_CONFIG.port,
         )
         return conn
     except Exception as e:
@@ -70,6 +70,7 @@ def check_tables_exist(db_manager: DBManager) -> bool:
     except Exception as e:
         print(f"Ошибка проверки таблиц: {e}")
         return False
+
 
 def fill_database_with_vacancies(db_manager: DBManager) -> bool:
     """Заполняет базу данных вакансиями"""
@@ -112,7 +113,7 @@ def show_companies_and_vacancies(db_manager: DBManager) -> None:
     per_page = 10
 
     while True:
-        companies = db_manager.get_companies_and_vacancies_count(limit=per_page, offset=(page-1)*per_page)
+        companies = db_manager.get_companies_and_vacancies_count(limit=per_page, offset=(page - 1) * per_page)
 
         if not companies:
             print("Компаний не найдено")
@@ -123,7 +124,7 @@ def show_companies_and_vacancies(db_manager: DBManager) -> None:
         for i, company in enumerate(companies, 1):
             print(f"{i}. {company['company_name']}: {company['vacancy_count']} вакансий")
 
-        total_companies = db_manager.get_total_count('companies')
+        total_companies = db_manager.get_total_count("companies")
         total_pages = max(1, (total_companies + per_page - 1) // per_page)
 
         print(f"\nСтраница {page} из {total_pages}")
@@ -131,11 +132,11 @@ def show_companies_and_vacancies(db_manager: DBManager) -> None:
 
         action = input("Выберите действие: ").lower().strip()
 
-        if action == 'n' and page < total_pages:
+        if action == "n" and page < total_pages:
             page += 1
-        elif action == 'p' and page > 1:
+        elif action == "p" and page > 1:
             page -= 1
-        elif action == 'b':
+        elif action == "b":
             break
         else:
             print("Неверное действие")
@@ -147,7 +148,7 @@ def show_all_vacancies(db_manager: DBManager) -> None:
     per_page = 10
 
     while True:
-        vacancies = db_manager.get_all_vacancies(limit=per_page, offset=(page-1)*per_page)
+        vacancies = db_manager.get_all_vacancies(limit=per_page, offset=(page - 1) * per_page)
 
         if not vacancies:
             print("Вакансий не найдено")
@@ -156,13 +157,13 @@ def show_all_vacancies(db_manager: DBManager) -> None:
         print(f"\nСтраница {page}:")
         print("-" * 80)
         for i, vac in enumerate(vacancies, 1):
-            salary = format_salary(vac['salary'])
+            salary = format_salary(vac["salary"])
             print(f"{i}. {vac['company_name']} - {vac['vacancy_name']}")
             print(f"   Зарплата: {salary}")
             print(f"   {vac['url']}")
             print()
 
-        total_vacancies = db_manager.get_total_count('vacancies')
+        total_vacancies = db_manager.get_total_count("vacancies")
         total_pages = max(1, (total_vacancies + per_page - 1) // per_page)
 
         print(f"Страница {page} из {total_pages}")
@@ -170,11 +171,11 @@ def show_all_vacancies(db_manager: DBManager) -> None:
 
         action = input("Выберите действие: ").lower().strip()
 
-        if action == 'n' and page < total_pages:
+        if action == "n" and page < total_pages:
             page += 1
-        elif action == 'p' and page > 1:
+        elif action == "p" and page > 1:
             page -= 1
-        elif action == 'b':
+        elif action == "b":
             break
         else:
             print("Неверное действие")
@@ -200,7 +201,7 @@ def show_high_salary_vacancies(db_manager: DBManager) -> None:
     print(f"\nВакансии с зарплатой выше средней:")
     print("-" * 80)
     for i, vac in enumerate(vacancies, 1):
-        salary = format_salary(vac['salary'])
+        salary = format_salary(vac["salary"])
         print(f"{i}. {vac['company_name']} - {vac['vacancy_name']}")
         print(f"   Зарплата: {salary}")
         print(f"   {vac['url']}")
@@ -219,11 +220,7 @@ def search_vacancies_by_keyword(db_manager: DBManager) -> None:
     max_salary = safe_float_input("Максимальная зарплата (оставьте пустым если не нужно): ")
 
     vacancies = db_manager.get_vacancies_with_keyword(
-        keyword=keyword,
-        company_name=company_filter or "",
-        min_salary=min_salary,
-        max_salary=max_salary,
-        limit=50
+        keyword=keyword, company_name=company_filter or "", min_salary=min_salary, max_salary=max_salary, limit=50
     )
 
     if not vacancies:
@@ -233,8 +230,8 @@ def search_vacancies_by_keyword(db_manager: DBManager) -> None:
     print(f"\nНайдено {len(vacancies)} вакансий:")
     print("-" * 80)
     for i, vac in enumerate(vacancies, 1):
-        salary = format_salary(vac['salary'])
-        remote = "Удаленная работа" if vac['remote'] else "На территории работодателя"
+        salary = format_salary(vac["salary"])
+        remote = "Удаленная работа" if vac["remote"] else "На территории работодателя"
         print(f"{i}. {vac['company_name']} - {vac['vacancy_name']}")
         print(f"   {salary} | {remote}")
         print(f"   {vac['experience']}")
@@ -258,8 +255,9 @@ def show_vacancies_by_company(db_manager: DBManager) -> None:
     print(f"\nВакансии компании '{company_name}':")
     print("-" * 80)
     for i, vac in enumerate(vacancies, 1):
-        salary = format_salary(vac['salary'])
-        if vac['remote'] : remote = "Удаленная"
+        salary = format_salary(vac["salary"])
+        if vac["remote"]:
+            remote = "Удаленная"
         print(f"{i}. {vac['vacancy_name']}")
         print(f"   {salary} | {remote}")
         print(f"   {vac['experience']}")
@@ -355,6 +353,7 @@ def main() -> None:
     except Exception as e:
         print(f"Критическая ошибка: {e}")
         import traceback
+
         traceback.print_exc()
     finally:
         if conn:

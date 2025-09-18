@@ -1,4 +1,4 @@
-from typing import  Any
+from typing import Any
 import requests
 from src.base_api import BaseAPI
 from src.company import Company
@@ -53,7 +53,7 @@ class HHAPI(BaseAPI):
             description=description,
             salary_range=(salary_from, salary_to),
             experience=experience,
-            remote=remote
+            remote=remote,
         )
 
         vacancy.company_id = company_id
@@ -72,11 +72,7 @@ class HHAPI(BaseAPI):
         if not company_id:
             return None
 
-        return Company(
-            company_id=company_id,
-            company_name=company_name,
-            site_url=company_site_url
-        )
+        return Company(company_id=company_id, company_name=company_name, site_url=company_site_url)
 
     def get_vacancies(self, keyword: str, per_page: int = 20, max_pages: int = 5) -> list[Vacancy]:
         """Получает список вакансий по ключевому слову"""
