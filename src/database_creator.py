@@ -1,111 +1,78 @@
-from typing import Optional
 import psycopg2
-from psycopg2 import sql
-from psycopg2.extensions import connection
 from config import DB_CONFIG
 
 
 class DatabaseCreator:
-    """Класс для создания БД и таблиц"""
+    """Класс для создания и настройки базы данных"""
 
-    def __init__(self, config=DB_CONFIG):
-        self.config = config
+    def __init__(self):
+        self.db_name = DB_CONFIG.name
+        self.user = DB_CONFIG.user
+        self.password = DB_CONFIG.password
+        self.host = DB_CONFIG.host
+        self.port = DB_CONFIG.port
 
-    def get_connection(self, database_name: Optional[str] = None) -> Optional[connection]:
+    def _get_connection(self, db_name: str):
         """Устанавливает соединение с указанной базой данных"""
-        try:
-            conn = psycopg2.connect(
-                host=self.config.host,
-                port=self.config.port,
-                database=database_name or self.config.name,
-                user=self.config.user,
-                password=self.config.password,
-            )
-            return conn
-        except Exception as e:
-            print(f"Ошибка подключения к БД '{database_name or self.config.name}': {e}")
-            return None
+        return psycopg2.connect(
+            host=self.host,
+            database=db_name,
+            user=self.user,
+            password=self.password,
+            port=self.port,
+        )
 
-    def create_database(self) -> bool:
-        """Создаёт базу данных, если она не существует"""
+    def setup_database(self):
+        """Создаёт базу данных и таблицы"""
         try:
-            conn = self.get_connection("postgres")
-            if not conn:
-                return False
+            conn = self._get_connection("postgres")
             conn.autocommit = True
-
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (self.config.name,))
-                exists = cur.fetchone()
-                if not exists:
-                    cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(self.config.name)))
-                    print(f"База данных '{self.config.name}' создана")
-                else:
-                    print(f"База данных '{self.config.name}' уже существует")
-
+            cur = conn.cursor()
+            cur.execute(f"SELECT 1 FROM pg_database WHERE datname = '{self.db_name}'")
+            if not cur.fetchone():
+                cur.execute(f"CREATE DATABASE {self.db_name}")
+                print(f"База данных '{self.db_name}' создана")
+            else:
+                print(f"База данных '{self.db_name}' уже существует")
+            cur.close()
             conn.close()
-            return True
-        except Exception as e:
-            print(f"Ошибка при создании базы данных: {e}")
-            return False
 
-    def create_tables(self) -> bool:
-        """Создаёт таблицы в базе данных"""
-        try:
-            conn = self.get_connection()
-            if not conn:
-                return False
+            conn = self._get_connection(self.db_name)
+            cur = conn.cursor()
 
-            with conn.cursor() as cur:
-                # Таблица компаний
-                cur.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS companies (
-                        company_id INTEGER PRIMARY KEY,
-                        company_name VARCHAR(255) NOT NULL,
-                        site_url VARCHAR(255),
-                        region VARCHAR(100),
-                        telephone VARCHAR(50),
-                        email VARCHAR(255),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
+            # Таблица компаний
+            cur.execute(
                 """
-                )
+                CREATE TABLE IF NOT EXISTS companies (
+                    company_id TEXT PRIMARY KEY,
+                    company_name TEXT NOT NULL,
+                    company_name_real TEXT,
+                    site_url TEXT
+                );
+            """
+            )
 
-                # Таблица вакансий
-                cur.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS vacancies (
-                        url VARCHAR(255) PRIMARY KEY,
-                        company_id INTEGER NOT NULL,
-                        vacancy_name VARCHAR(255) NOT NULL,
-                        requirements TEXT,
-                        salary NUMERIC,
-                        remote BOOLEAN DEFAULT FALSE,
-                        experience VARCHAR(100),
-                        currency VARCHAR(10),
-                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (company_id)
-                            REFERENCES companies(company_id)
-                            ON DELETE CASCADE
-                    )
+            # Таблица вакансий
+            cur.execute(
                 """
-                )
+                CREATE TABLE IF NOT EXISTS vacancies (
+                    id SERIAL PRIMARY KEY,
+                    vacancy_name TEXT NOT NULL,
+                    url TEXT UNIQUE,
+                    requirements TEXT,
+                    salary NUMERIC,
+                    experience TEXT,
+                    remote BOOLEAN,
+                    company_id TEXT REFERENCES companies(company_id),
+                    company_name_real TEXT
+                );
+            """
+            )
 
             conn.commit()
-            conn.close()
             print("Таблицы созданы успешно")
-            return True
-
         except Exception as e:
-            print(f"Ошибка при создании таблиц: {e}")
-            return False
-
-    def setup_database(self) -> bool:
-        """Полная настройка базы данных"""
-        print("Настройка базы данных...")
-        if self.create_database() and self.create_tables():
-            print("База данных настроена успешно")
-            return True
-        return False
+            print(f"Ошибка при создании базы данных или таблиц: {e}")
+        finally:
+            if conn:
+                conn.close()
