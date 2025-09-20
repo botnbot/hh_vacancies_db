@@ -1,6 +1,10 @@
+from typing import Optional
+from psycopg2.extensions import connection
 import psycopg2
-from src.hh_api import HHAPI
+
+from config import DB_CONFIG
 from src.db_manager import DBManager
+from src.hh_api import HHAPI
 
 
 class DataFiller:
@@ -8,23 +12,27 @@ class DataFiller:
 
     def __init__(
         self,
-        db_name: str = "hh_vacancies",
-        user: str = "postgres",
-        password: str = "password",
-        host: str = "localhost",
-        port: int = 5432,
-    ):
+        db_name: str = DB_CONFIG.name,
+        user: str = DB_CONFIG.user,
+        password: str = DB_CONFIG.password,
+        host: str = DB_CONFIG.host,
+        port: int = int(DB_CONFIG.port),
+    ) -> None:
         self.db_name = db_name
         self.user = user
         self.password = password
         self.host = host
         self.port = port
 
-    def get_connection(self):
+    def get_connection(self) -> Optional[connection]:
         """Устанавливает соединение с базой данных"""
         try:
             conn = psycopg2.connect(
-                host=self.host, port=self.port, database=self.db_name, user=self.user, password=self.password
+                host=self.host,
+                port=self.port,
+                database=self.db_name,
+                user=self.user,
+                password=self.password
             )
             conn.autocommit = False
             return conn
@@ -32,7 +40,7 @@ class DataFiller:
             print(f"Ошибка подключения к БД: {e}")
             return None
 
-    def fill_vacancies(self, companies: list, per_page: int = 20, max_pages: int = 5):
+    def fill_vacancies(self, companies: list, per_page: int = 20, max_pages: int = 5)  -> None:
         """
         Заполняет базу данных вакансиями указанных компаний.
 
