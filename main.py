@@ -37,7 +37,9 @@ def show_companies(db_manager: DBManager) -> None:
     print("\nКомпании и количество вакансий:")
     print("-" * 80)
     for company in results:
-        print(f"{company['company_name']}: {company['vacancy_count']}")
+        print(
+            f"{company.get('company_name_real', company.get('company_name', 'Не указано'))}: {company['vacancy_count']}"
+        )
     print()
 
 
@@ -53,7 +55,7 @@ def show_all_vacancies(db_manager: DBManager) -> None:
                 "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
                 "experience": vac_data.get("experience", "не указан"),
                 "remote": vac_data.get("remote", False),
-                "company_name": vac_data.get("company_name", "Не указано"),
+                "company_name": vac_data.get("company_name_real") or vac_data.get("company_name", "Не указано"),
             }
         )
         for vac_data in results
@@ -85,7 +87,7 @@ def show_high_salary_vacancies(db_manager: DBManager) -> None:
                 "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
                 "experience": vac_data.get("experience", "не указан"),
                 "remote": vac_data.get("remote", False),
-                "company_name": vac_data.get("company_name", "Не указано"),
+                "company_name": vac_data.get("company_name_real") or vac_data.get("company_name", "Не указано"),
             }
         )
         for vac_data in results
@@ -112,7 +114,7 @@ def search_vacancies(db_manager: DBManager) -> None:
                 "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
                 "experience": vac_data.get("experience", "не указан"),
                 "remote": vac_data.get("remote", False),
-                "company_name": vac_data.get("company_name", "Не указано"),
+                "company_name": vac_data.get("company_name_real") or vac_data.get("company_name", "Не указано"),
             }
         )
         for vac_data in results
@@ -127,7 +129,7 @@ def search_vacancies(db_manager: DBManager) -> None:
 
 
 def show_vacancies_by_company(db_manager: DBManager) -> None:
-    """Показывает вакансии по конкретной компании"""
+    """Показывает вакансии  конкретной компании"""
     company_name = input("Введите название компании: ").strip()
     results = db_manager.get_vacancies_by_company(company_name)
     print(f"\nВакансии компании '{company_name}':")
@@ -141,7 +143,7 @@ def show_vacancies_by_company(db_manager: DBManager) -> None:
                 "salary_range": (vac.get("salary") or 0, vac.get("salary") or 0),
                 "experience": vac.get("experience", "не указан"),
                 "remote": vac.get("remote", False),
-                "company_name": company_name,
+                "company_name": vac.get("company_name_real") or vac.get("company_name", company_name),
             }
         )
         print(vacancy)
@@ -213,7 +215,7 @@ def main() -> None:
                 name = input(f"Компания {len(user_companies)+1}: ").strip()
                 if not name:
                     break
-                company_obj = Company(name, None)
+                company_obj = Company(name)
                 user_companies.append(company_obj)
 
             if not user_companies:
