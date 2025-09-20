@@ -10,14 +10,18 @@ class Company:
     :param site_url: Сайт компании (опционально).
     """
 
-    def __init__(self, company_name: str, company_id: Optional[str | int], site_url: str = ""):
+    def __init__(self, company_name: str, company_id: Optional[str | int] = None, site_url: str = ""):
+        self.company_name = company_name.strip() or "Без названия"
+        self.site_url = site_url.strip()
+
         if not company_id:
-            print(f" Компания '{company_name}' пропущена: отсутствует company_id")
+            company_id = self._fetch_company_id(self.company_name)
+
+        if not company_id:
+            print(f"Не удалось найти company_id для '{self.company_name}'")
             self.company_id = ""
         else:
             self.company_id = str(company_id)
-        self.company_name = company_name.strip() or "Без названия"
-        self.site_url = site_url.strip()
 
     def __repr__(self) -> str:
         return f"Company('{self.company_name}', '{self.company_id}')"
@@ -31,3 +35,15 @@ class Company:
 
     def to_dict(self) -> dict[str, Any]:
         return {"company_name": self.company_name, "company_id": self.company_id, "site_url": self.site_url}
+
+    @staticmethod
+    def _fetch_company_id(company_name: str) -> Optional[str]:
+        """
+        Запрашивает company_id через API hh.ru по названию компании.
+        """
+        hh = HHAPI()
+        companies, _ = hh.get_vacancies_with_companies(keyword=company_name, per_page=1, max_pages=1)
+        if not _:
+            return None
+        company = next((c for c in _ if c.company_name.lower() == company_name.lower()), None)
+        return company.company_id if company else None
