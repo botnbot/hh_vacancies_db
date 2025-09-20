@@ -13,21 +13,25 @@ class DBManager:
         """Проверяет существование таблиц в базе данных"""
         try:
             with self.connection.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_name = 'vacancies'
                     )
-                """)
+                """
+                )
                 result = cur.fetchone()
                 vacancies_exists = bool(result and result[0])
 
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables
                         WHERE table_schema = 'public' AND table_name = 'companies'
                     )
-                """)
+                """
+                )
                 result = cur.fetchone()
                 companies_exists = bool(result and result[0])
 
@@ -37,11 +41,7 @@ class DBManager:
             return False
 
     def _prepare_keyword_condition(
-            self,
-            keyword: str,
-            search_fields: Optional[list[Any]],
-            exact_match: bool,
-            operator: str
+        self, keyword: str, search_fields: Optional[list[Any]], exact_match: bool, operator: str
     ) -> tuple[str, list[Any]]:
         """Вспомогательный метод для подготовки условия поиска по ключевым словам"""
         default_fields = ["vacancy_name", "requirements", "experience"]
@@ -221,11 +221,9 @@ class DBManager:
                     if not self.company_exists(company_id):
                         company_name = getattr(vacancy, "company_name", "Неизвестная компания")
                         company_url = getattr(vacancy, "company_url", "") or getattr(vacancy, "site_url", "")
-                        self.save_company({
-                            "company_id": company_id,
-                            "company_name": company_name,
-                            "site_url": company_url
-                        })
+                        self.save_company(
+                            {"company_id": company_id, "company_name": company_name, "site_url": company_url}
+                        )
 
                     salary = self._calculate_salary(vacancy)
                     vacancy_data = {
@@ -301,16 +299,16 @@ class DBManager:
             return []
 
     def get_vacancies_with_keyword(
-            self,
-            keyword: str = "",
-            search_fields: Optional[list[Any]] = None,
-            company_name: str = "",
-            min_salary: Optional[float] = None,
-            max_salary: Optional[float] = None,
-            exact_match: bool = False,
-            operator: str = "OR",
-            limit: int = 100,
-            offset: int = 0
+        self,
+        keyword: str = "",
+        search_fields: Optional[list[Any]] = None,
+        company_name: str = "",
+        min_salary: Optional[float] = None,
+        max_salary: Optional[float] = None,
+        exact_match: bool = False,
+        operator: str = "OR",
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[dict]:
         """Расширенный поиск вакансий с пагинацией"""
         try:
@@ -349,8 +347,13 @@ class DBManager:
                 results = cur.fetchall()
                 return [
                     {
-                        "company_name": r[0], "vacancy_name": r[1], "salary": r[2],
-                        "url": r[3], "requirements": r[4], "experience": r[5], "remote": r[6]
+                        "company_name": r[0],
+                        "vacancy_name": r[1],
+                        "salary": r[2],
+                        "url": r[3],
+                        "requirements": r[4],
+                        "experience": r[5],
+                        "remote": r[6],
                     }
                     for r in results
                 ]

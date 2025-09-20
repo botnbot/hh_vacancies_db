@@ -45,15 +45,17 @@ def show_all_vacancies(db_manager: DBManager) -> None:
     """Показывает все вакансии с форматированием класса Vacancy"""
     results = db_manager.get_all_vacancies()
     vacancies = [
-        Vacancy.from_dict({
-            "title": vac_data.get("vacancy_name", "Без названия"),
-            "url": vac_data.get("url", ""),
-            "description": vac_data.get("requirements", "Описание отсутствует"),
-            "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
-            "experience": vac_data.get("experience", "не указан"),
-            "remote": vac_data.get("remote", False),
-            "company_name": vac_data.get("company_name", "Не указано")
-        })
+        Vacancy.from_dict(
+            {
+                "title": vac_data.get("vacancy_name", "Без названия"),
+                "url": vac_data.get("url", ""),
+                "description": vac_data.get("requirements", "Описание отсутствует"),
+                "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
+                "experience": vac_data.get("experience", "не указан"),
+                "remote": vac_data.get("remote", False),
+                "company_name": vac_data.get("company_name", "Не указано"),
+            }
+        )
         for vac_data in results
     ]
     vacancies.sort(reverse=True)
@@ -75,15 +77,17 @@ def show_high_salary_vacancies(db_manager: DBManager) -> None:
     """Показывает вакансии с зарплатой выше средней"""
     results = db_manager.get_vacancies_with_higher_salary()
     vacancies = [
-        Vacancy.from_dict({
-            "title": vac_data.get("vacancy_name", "Без названия"),
-            "url": vac_data.get("url", ""),
-            "description": vac_data.get("requirements", "Описание отсутствует"),
-            "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
-            "experience": vac_data.get("experience", "не указан"),
-            "remote": vac_data.get("remote", False),
-            "company_name": vac_data.get("company_name", "Не указано")
-        })
+        Vacancy.from_dict(
+            {
+                "title": vac_data.get("vacancy_name", "Без названия"),
+                "url": vac_data.get("url", ""),
+                "description": vac_data.get("requirements", "Описание отсутствует"),
+                "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
+                "experience": vac_data.get("experience", "не указан"),
+                "remote": vac_data.get("remote", False),
+                "company_name": vac_data.get("company_name", "Не указано"),
+            }
+        )
         for vac_data in results
     ]
     vacancies.sort(reverse=True)
@@ -100,15 +104,17 @@ def search_vacancies(db_manager: DBManager) -> None:
     keyword = input("Введите ключевое слово для поиска: ").strip()
     results = db_manager.get_vacancies_with_keyword(keyword)
     vacancies = [
-        Vacancy.from_dict({
-            "title": vac_data.get("vacancy_name", "Без названия"),
-            "url": vac_data.get("url", ""),
-            "description": vac_data.get("requirements", "Описание отсутствует"),
-            "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
-            "experience": vac_data.get("experience", "не указан"),
-            "remote": vac_data.get("remote", False),
-            "company_name": vac_data.get("company_name", "Не указано")
-        })
+        Vacancy.from_dict(
+            {
+                "title": vac_data.get("vacancy_name", "Без названия"),
+                "url": vac_data.get("url", ""),
+                "description": vac_data.get("requirements", "Описание отсутствует"),
+                "salary_range": (vac_data.get("salary") or 0, vac_data.get("salary") or 0),
+                "experience": vac_data.get("experience", "не указан"),
+                "remote": vac_data.get("remote", False),
+                "company_name": vac_data.get("company_name", "Не указано"),
+            }
+        )
         for vac_data in results
     ]
     vacancies.sort(reverse=True)
@@ -127,15 +133,17 @@ def show_vacancies_by_company(db_manager: DBManager) -> None:
     print(f"\nВакансии компании '{company_name}':")
     print("-" * 80)
     for vac in results:
-        vacancy = Vacancy.from_dict({
-            "title": vac.get("vacancy_name", "Без названия"),
-            "url": vac.get("url", ""),
-            "description": vac.get("requirements", "Описание отсутствует"),
-            "salary_range": (vac.get("salary") or 0, vac.get("salary") or 0),
-            "experience": vac.get("experience", "не указан"),
-            "remote": vac.get("remote", False),
-            "company_name": company_name
-        })
+        vacancy = Vacancy.from_dict(
+            {
+                "title": vac.get("vacancy_name", "Без названия"),
+                "url": vac.get("url", ""),
+                "description": vac.get("requirements", "Описание отсутствует"),
+                "salary_range": (vac.get("salary") or 0, vac.get("salary") or 0),
+                "experience": vac.get("experience", "не указан"),
+                "remote": vac.get("remote", False),
+                "company_name": company_name,
+            }
+        )
         print(vacancy)
     print()
 

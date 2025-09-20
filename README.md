@@ -1,4 +1,4 @@
-# HH Vacancies Database
+7# HH Vacancies Database
 
 Система для получения, хранения и анализа вакансий с сайта [hh.ru](https://hh.ru) с использованием PostgreSQL.
 

@@ -58,7 +58,8 @@ class DatabaseCreator:
 
             with conn.cursor() as cur:
                 # Таблица компаний
-                cur.execute("""
+                cur.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS companies (
                         company_id INTEGER PRIMARY KEY,
                         company_name VARCHAR(255) NOT NULL,
@@ -68,10 +69,12 @@ class DatabaseCreator:
                         email VARCHAR(255),
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
-                """)
+                """
+                )
 
                 # Таблица вакансий
-                cur.execute("""
+                cur.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS vacancies (
                         url VARCHAR(255) PRIMARY KEY,
                         company_id INTEGER NOT NULL,
@@ -87,7 +90,8 @@ class DatabaseCreator:
                             REFERENCES companies(company_id)
                             ON DELETE CASCADE
                     )
-                """)
+                """
+                )
 
             conn.commit()
             conn.close()

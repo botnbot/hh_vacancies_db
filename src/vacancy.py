@@ -1,5 +1,6 @@
 from functools import total_ordering
 from typing import Any, Dict
+
 from utils.helpers import wrap_text
 
 

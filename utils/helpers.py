@@ -68,10 +68,7 @@ def paginate_items(items: list[Any], page: int, per_page: int = 10) -> tuple[lis
 
 
 def safe_int_input(
-    prompt: str,
-    min_val: int | None = None,
-    max_val: int | None = None,
-    default: int | None = None
+    prompt: str, min_val: int | None = None, max_val: int | None = None, default: int | None = None
 ) -> int:
     """
     Безопасный ввод целого числа с проверкой диапазона.

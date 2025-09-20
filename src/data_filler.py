@@ -28,11 +28,7 @@ class DataFiller:
         """Устанавливает соединение с базой данных"""
         try:
             conn = psycopg2.connect(
-                host=self.host,
-                port=self.port,
-                database=self.db_name,
-                user=self.user,
-                password=self.password
+                host=self.host, port=self.port, database=self.db_name, user=self.user, password=self.password
             )
             conn.autocommit = False
             return conn
@@ -40,7 +36,7 @@ class DataFiller:
             print(f"Ошибка подключения к БД: {e}")
             return None
 
-    def fill_vacancies(self, companies: list, per_page: int = 20, max_pages: int = 5)  -> None:
+    def fill_vacancies(self, companies: list, per_page: int = 20, max_pages: int = 5) -> None:
         """
         Заполняет базу данных вакансиями указанных компаний.
 
