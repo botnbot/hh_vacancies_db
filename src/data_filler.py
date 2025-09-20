@@ -5,6 +5,8 @@ import psycopg2
 from config import DB_CONFIG
 from src.db_manager import DBManager
 from src.hh_api import HHAPI
+from src.company import Company
+from src.vacancy import Vacancy
 
 
 class DataFiller:
@@ -28,7 +30,11 @@ class DataFiller:
         """Устанавливает соединение с базой данных"""
         try:
             conn = psycopg2.connect(
-                host=self.host, port=self.port, database=self.db_name, user=self.user, password=self.password
+                host=self.host,
+                port=self.port,
+                database=self.db_name,
+                user=self.user,
+                password=self.password,
             )
             conn.autocommit = False
             return conn
@@ -36,7 +42,7 @@ class DataFiller:
             print(f"Ошибка подключения к БД: {e}")
             return None
 
-    def fill_vacancies(self, companies: list, per_page: int = 20, max_pages: int = 5) -> None:
+    def fill_vacancies(self, companies: list[Company], per_page: int = 20, max_pages: int = 5) -> None:
         """
         Заполняет базу данных вакансиями указанных компаний.
 
@@ -53,30 +59,27 @@ class DataFiller:
             hh_api = HHAPI()
 
             for company in companies:
-                if not company.company_id:
-                    print(f"Компания '{company.company_name}' пропущена: отсутствует company_id")
-                    continue
-
-                print(f" Получение вакансий для компании: {company.company_name}")
-
-                vacancies, companies_data = hh_api.get_vacancies_with_companies(
-                    keyword=company.company_name, per_page=per_page, max_pages=max_pages
-                )
-
-                print(f" Найдено {len(vacancies)} вакансий для {company.company_name}")
-                print(f" Найдено {len(companies_data)} компаний")
-
-                for comp in companies_data:
-                    db_manager.save_company(comp.to_dict())
+                print(f"\nПолучение вакансий для компании: {company.company_name_real}")
+                vacancies: list[Vacancy] = []
+                if company.company_id:
+                    vacancies, companies_data = hh_api.get_vacancies_with_companies(
+                        keyword=company.company_name_real, per_page=per_page, max_pages=max_pages
+                    )
+                    for comp in companies_data:
+                        db_manager.save_company(comp.to_dict())
+                else:
+                    vacancies = hh_api.get_vacancies(
+                        keyword=company.company_name_real, per_page=per_page, max_pages=max_pages
+                    )
 
                 saved_count = db_manager.save_vacancies(vacancies)
-                print(f" Сохранено вакансий: {saved_count}")
+                print(f"Найдено вакансий: {len(vacancies)}, Сохранено: {saved_count}")
 
             conn.commit()
-            print(" Данные успешно загружены в БД")
+            print("\nДанные успешно загружены в БД")
 
         except Exception as e:
             conn.rollback()
-            print(f" Ошибка при заполнении базы данных: {e}")
+            print(f"\nОшибка при заполнении базы данных: {e}")
         finally:
             conn.close()
