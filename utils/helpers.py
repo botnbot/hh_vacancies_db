@@ -3,7 +3,7 @@
 """
 
 import textwrap
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 def format_salary(salary: Optional[float]) -> str:
@@ -42,7 +42,7 @@ def truncate_text(text: str, max_length: int = 100) -> str:
     return text[: max_length - 3] + "..."
 
 
-def paginate_items(items: List[Any], page: int, per_page: int = 10) -> tuple[List[Any], int, int]:
+def paginate_items(items: list[Any], page: int, per_page: int = 10) -> tuple[list[Any], int, int]:
     """
     Разбивает список элементов на страницы
 
@@ -67,25 +67,39 @@ def paginate_items(items: List[Any], page: int, per_page: int = 10) -> tuple[Lis
     return items[start_idx:end_idx], total_pages, total_items
 
 
-def safe_int_input(prompt: str, default: Optional[int] = None) -> Optional[int]:
+def safe_int_input(
+    prompt: str,
+    min_val: int | None = None,
+    max_val: int | None = None,
+    default: int | None = None
+) -> int:
     """
-    Безопасный ввод целого числа с обработкой ошибок
+    Безопасный ввод целого числа с проверкой диапазона.
 
-    Args:
-        prompt: Подсказка для ввода
-        default: Значение по умолчанию
-
-    Returns:
-        int or None: Введенное число или None при ошибке
+    :param prompt: сообщение для пользователя
+    :param min_val: минимально допустимое значение (или None)
+    :param max_val: максимально допустимое значение (или None)
+    :param default: значение по умолчанию, если ввод пустой
+    :return: целое число в заданном диапазоне
     """
-    try:
-        value = input(prompt).strip()
-        if not value and default is not None:
-            return default
-        return int(value) if value else None
-    except ValueError:
-        print("Ошибка: введите целое число")
-        return None
+    while True:
+        try:
+            value = input(prompt).strip()
+            if not value and default is not None:
+                return default
+
+            num = int(value)
+
+            if min_val is not None and num < min_val:
+                print(f"Введите число не меньше {min_val}.")
+                continue
+            if max_val is not None and num > max_val:
+                print(f"Введите число не больше {max_val}.")
+                continue
+
+            return num
+        except ValueError:
+            print("Ошибка: введите целое число.")
 
 
 def safe_float_input(prompt: str, default: Optional[float] = None) -> Optional[float]:
