@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Tuple
+from typing import Any, Optional
 import requests
 
 from src.base_api import BaseAPI
@@ -58,7 +58,7 @@ class HHAPI(BaseAPI):
         )
 
         vacancy.company_id = company_id
-        vacancy.company_name = company_name
+        vacancy.company_name_real = company_name
         vacancy.currency = currency
 
         return vacancy
@@ -73,9 +73,9 @@ class HHAPI(BaseAPI):
         if not company_id:
             return None
 
-        return Company(company_id=company_id, company_name=company_name, site_url=company_site_url)
+        return Company(company_name=company_name, company_id=company_id, site_url=company_site_url)
 
-    def get_vacancies(self, keyword: str, per_page: int = 20, max_pages: int = 5) -> List[Vacancy]:
+    def get_vacancies(self, keyword: str, per_page: int = 20, max_pages: int = 5) -> list[Vacancy]:
         """Получает список вакансий по ключевому слову"""
         vacancies: list[Vacancy] = []
         try:
@@ -96,7 +96,7 @@ class HHAPI(BaseAPI):
 
     def get_vacancies_with_companies(
         self, keyword: str, per_page: int = 20, max_pages: int = 5
-    ) -> Tuple[List[Vacancy], list[Company]]:
+    ) -> tuple[list[Vacancy], list[Company]]:
         """Получает список вакансий и компаний"""
         vacancies: list[Vacancy] = []
         companies: list[Company] = []
