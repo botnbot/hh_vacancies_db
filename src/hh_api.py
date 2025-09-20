@@ -1,5 +1,6 @@
-from typing import Any
+from typing import Any, Optional, List, Tuple
 import requests
+
 from src.base_api import BaseAPI
 from src.company import Company
 from src.vacancy import Vacancy
@@ -8,7 +9,7 @@ from src.vacancy import Vacancy
 class HHAPI(BaseAPI):
     """Класс для работы с API hh.ru - получение данных вакансий и компаний"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Инициализация API без зависимостей от БД"""
         self.base_url = "https://api.hh.ru/vacancies"
         self.headers = {"User-Agent": "HH-API-Client/1.0"}
@@ -62,7 +63,7 @@ class HHAPI(BaseAPI):
 
         return vacancy
 
-    def _parse_company(self, item: dict) -> Company | None:
+    def _parse_company(self, item: dict) -> Optional[Company]:
         """Парсит данные компании из JSON-ответа"""
         employer = item.get("employer", {}) or {}
         company_id = employer.get("id")
@@ -74,7 +75,7 @@ class HHAPI(BaseAPI):
 
         return Company(company_id=company_id, company_name=company_name, site_url=company_site_url)
 
-    def get_vacancies(self, keyword: str, per_page: int = 20, max_pages: int = 5) -> list[Vacancy]:
+    def get_vacancies(self, keyword: str, per_page: int = 20, max_pages: int = 5) -> List[Vacancy]:
         """Получает список вакансий по ключевому слову"""
         vacancies: list[Vacancy] = []
         try:
@@ -95,7 +96,7 @@ class HHAPI(BaseAPI):
 
     def get_vacancies_with_companies(
         self, keyword: str, per_page: int = 20, max_pages: int = 5
-    ) -> tuple[list[Vacancy], list[Company]]:
+    ) -> Tuple[List[Vacancy], list[Company]]:
         """Получает список вакансий и компаний"""
         vacancies: list[Vacancy] = []
         companies: list[Company] = []
