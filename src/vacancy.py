@@ -1,20 +1,21 @@
-from functools import total_ordering
-from typing import Any, Dict
+from typing import Optional
 
 from utils.helpers import wrap_text
 
 
-@total_ordering
 class Vacancy:
-    """Класс вакансии с приватными атрибутами и методами валидации"""
+    """
+    Класс для представления вакансии.
+    """
 
     __slots__ = (
-        "__title",
-        "__url",
-        "__description",
-        "__salary_range",
-        "__experience",
-        "__remote",
+        "title",
+        "url",
+        "description",
+        "salary_from",
+        "salary_to",
+        "experience",
+        "remote",
         "company_id",
         "company_name",
         "currency",
@@ -23,139 +24,100 @@ class Vacancy:
     def __init__(
         self,
         title: str,
-        url: str,
-        description: str,
-        salary_range: tuple | int,
+        url: str = "",
+        description: str = "",
+        salary_range: Optional[tuple[Optional[float], Optional[float]]] = (None, None),
         experience: str = "не указан",
         remote: bool = False,
-        company_id: str | None = None,
-        company_name: str | None = None,
-        currency: str = "RUR",
-    ) -> None:
-        self.__title = self.__validate_string(title, "Без названия")
-        self.__url = self.__validate_string(url, "")
-        self.__description = self.__validate_string(description, "Описание отсутствует")
-        self.__experience = self.__validate_string(experience, "не указан")
-        self.__salary_range = self.__normalize_salary(salary_range)
-        self.__remote = bool(remote)
+    ):
+        self.title = title
+        self.url = url
+        self.description = description
+        self.salary_from, self.salary_to = salary_range or (None, None)
+        self.experience = experience
+        self.remote = remote
 
-        self.company_id = str(company_id) if company_id else ""
-        self.company_name = self.__validate_string(company_name, "Не указано") if company_name else "Не указано"
-        self.currency = currency or "RUR"
-
-    def __validate_string(self, value: str, default: str = "") -> str:
-        if not isinstance(value, str) or not value.strip():
-            return default
-        return value.strip()
-
-    def __normalize_salary(self, value: tuple[int, int] | int) -> tuple[int, int]:
-        if isinstance(value, int):
-            return (value, value)
-        if isinstance(value, tuple) and len(value) == 2:
-            try:
-                return (int(value[0] or 0), int(value[1] or 0))
-            except (ValueError, TypeError):
-                return (0, 0)
-        return (0, 0)
-
-    @property
-    def title(self) -> str:
-        return self.__title
-
-    @property
-    def url(self) -> str:
-        return self.__url
-
-    @property
-    def description(self) -> str:
-        return self.__description
-
-    @property
-    def experience(self) -> str:
-        return self.__experience
-
-    @property
-    def salary_from(self) -> int:
-        return self.salary_range[0]
-
-    @property
-    def salary_to(self) -> int:
-        return self.salary_range[1]
-
-    @property
-    def salary_range(self) -> tuple[int, int]:
-        return self.__salary_range
-
-    @property
-    def remote(self) -> bool:
-        return self.__remote
-
-    @property
-    def avg_salary(self) -> int:
-        """Возвращает среднюю зарплату с учетом неполных данных"""
-        salary_from, salary_to = self.__salary_range
-        if salary_from and salary_to:
-            return (salary_from + salary_to) // 2
-        return salary_from or salary_to or 0
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Vacancy):
-            return NotImplemented
-        return self.__url == other.url
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, Vacancy):
-            return NotImplemented
-        return self.avg_salary < other.avg_salary
+        self.company_id: Optional[str] = None
+        self.company_name: str = "Не указано"
+        self.currency: str = "RUR"
 
     def __repr__(self) -> str:
-        return f"Vacancy({self.title!r}, {self.url!r}, {self.salary_range}, {self.experience!r})"
+        salary = (
+            f"{self.salary_from or 0}-{self.salary_to or 0} {self.currency}"
+            if self.salary_from or self.salary_to
+            else "не указана"
+        )
+        return f"Vacancy('{self.title}', {salary}, remote={self.remote}, company='{self.company_name}')"
 
     def __str__(self) -> str:
-        salary_from, salary_to = self.salary_range
-        if salary_from or salary_to:
-            salary_str = f"{salary_from}–{salary_to} {self.currency}"
-        else:
-            salary_str = "Зарплата не указана"
-
-        remote_status = "Удаленная работа" if self.remote else "На территории работодателя"
-
+        salary = (
+            f"{self.salary_from or 0}-{self.salary_to or 0} {self.currency}"
+            if self.salary_from or self.salary_to
+            else "не указана"
+        )
+        remote_str = "Да" if self.remote else "Нет"
         description_wrapped = wrap_text(self.description, width=80)
-
         return (
-            f"{self.title}\n"
             f"Компания: {self.company_name}\n"
+            f"Вакансия: {self.title}\n"
+            f"Зарплата: {salary}\n"
             f"Опыт: {self.experience}\n"
-            f"Зарплата: {salary_str}\n"
-            f"Тип работы: {remote_status}\n"
-            f"Описание:\n{description_wrapped}\n"
+            f"Удалённая: {remote_str}\n"
             f"Ссылка: {self.url}\n"
-            f"{'=' * 80}"
+            f"Описание:\n{description_wrapped}\n" + "-" * 80
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def __lt__(self, other: "Vacancy") -> bool:
+        """
+        Сравнение вакансий по средней зарплате для сортировки.
+        Если зарплата не указана — считаем её равной 0.
+        """
+        self_avg = ((self.salary_from or 0) + (self.salary_to or 0)) / 2
+        other_avg = ((other.salary_from or 0) + (other.salary_to or 0)) / 2
+        return self_avg < other_avg
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Vacancy":
+        """
+        Создаёт объект Vacancy из словаря.
+        Поддерживает как salary_range (from, to), так и общее поле salary.
+        """
+        salary_from = None
+        salary_to = None
+
+        if "salary_range" in data and isinstance(data["salary_range"], (list, tuple)):
+            salary_from, salary_to = data.get("salary_range", (None, None))
+        elif "salary" in data:
+            salary_from = data.get("salary")
+            salary_to = data.get("salary")
+
+        vacancy = cls(
+            title=data.get("title", "Без названия"),
+            url=data.get("url", ""),
+            description=data.get("description", "Описание отсутствует"),
+            salary_range=(salary_from, salary_to),
+            experience=data.get("experience", "не указан"),
+            remote=data.get("remote", False),
+        )
+
+        vacancy.company_name = data.get("company_name") or "Не указано"
+        vacancy.company_id = data.get("company_id")
+        vacancy.currency = data.get("currency", "RUR")
+        return vacancy
+
+    def to_dict(self) -> dict:
+        """
+        Преобразует объект Vacancy в словарь (например, для сохранения в БД).
+        """
         return {
-            "title": self.__title,
-            "url": self.__url,
-            "description": self.__description,
-            "salary_range": self.__salary_range,
-            "experience": self.__experience,
-            "remote": self.__remote,
+            "title": self.title,
+            "url": self.url,
+            "description": self.description,
+            "salary_from": self.salary_from,
+            "salary_to": self.salary_to,
+            "experience": self.experience,
+            "remote": self.remote,
             "company_id": self.company_id,
             "company_name": self.company_name,
             "currency": self.currency,
         }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Vacancy":
-        return cls(
-            title=data.get("title", "Без названия"),
-            url=data.get("url", ""),
-            description=data.get("description", ""),
-            salary_range=tuple(data.get("salary_range", (0, 0))),
-            experience=data.get("experience", "не указан"),
-            remote=data.get("remote", False),
-            company_id=data.get("company_id"),
-            company_name=data.get("company_name"),
-            currency=data.get("currency", "RUR"),
-        )

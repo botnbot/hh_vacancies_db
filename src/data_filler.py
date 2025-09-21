@@ -1,11 +1,12 @@
 from typing import Optional
-from psycopg2.extensions import connection
+
 import psycopg2
+from psycopg2.extensions import connection
 
 from config import DB_CONFIG
+from src.company import Company
 from src.db_manager import DBManager
 from src.hh_api import HHAPI
-from src.company import Company
 from src.vacancy import Vacancy
 
 

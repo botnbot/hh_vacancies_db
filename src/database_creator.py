@@ -1,78 +1,78 @@
 import psycopg2
+from psycopg2 import sql
+
 from config import DB_CONFIG
 
 
 class DatabaseCreator:
-    """Класс для создания и настройки базы данных"""
+    """Класс для создания базы данных и таблиц."""
 
     def __init__(self):
         self.db_name = DB_CONFIG.name
-        self.user = DB_CONFIG.user
-        self.password = DB_CONFIG.password
-        self.host = DB_CONFIG.host
-        self.port = DB_CONFIG.port
 
-    def _get_connection(self, db_name: str):
-        """Устанавливает соединение с указанной базой данных"""
+    def _get_connection(self, dbname="postgres"):
+        """Создаёт соединение с указанной БД."""
         return psycopg2.connect(
-            host=self.host,
-            database=db_name,
-            user=self.user,
-            password=self.password,
-            port=self.port,
+            host=DB_CONFIG.host,
+            database=dbname,
+            user=DB_CONFIG.user,
+            password=DB_CONFIG.password,
+            port=DB_CONFIG.port,
         )
 
     def setup_database(self):
-        """Создаёт базу данных и таблицы"""
+        """Настраивает базу данных и таблицы."""
+        self._create_database()
+        self._create_tables()
+
+    def _create_database(self):
+        """Создаёт базу данных, если её нет."""
         try:
-            conn = self._get_connection("postgres")
+            conn = self._get_connection()
             conn.autocommit = True
-            cur = conn.cursor()
-            cur.execute(f"SELECT 1 FROM pg_database WHERE datname = '{self.db_name}'")
-            if not cur.fetchone():
-                cur.execute(f"CREATE DATABASE {self.db_name}")
-                print(f"База данных '{self.db_name}' создана")
-            else:
-                print(f"База данных '{self.db_name}' уже существует")
-            cur.close()
+            with conn.cursor() as cur:
+                cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(self.db_name)))
+            print(f"База данных '{self.db_name}' успешно создана")
+        except psycopg2.errors.DuplicateDatabase:
+            print(f"База данных '{self.db_name}' уже существует")
+        finally:
             conn.close()
 
-            conn = self._get_connection(self.db_name)
-            cur = conn.cursor()
+    def _create_tables(self):
+        """Создаёт таблицы companies и vacancies."""
+        conn = self._get_connection(self.db_name)
+        with conn:
+            with conn.cursor() as cur:
+                # Таблица компаний
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS companies (
+                        id SERIAL PRIMARY KEY,
+                        company_name TEXT NOT NULL,
+                        company_name_real TEXT NOT NULL,
+                        company_id TEXT UNIQUE,
+                        site_url TEXT
+                    );
+                    """
+                )
 
-            # Таблица компаний
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS companies (
-                    company_id TEXT PRIMARY KEY,
-                    company_name TEXT NOT NULL,
-                    company_name_real TEXT,
-                    site_url TEXT
-                );
-            """
-            )
-
-            # Таблица вакансий
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS vacancies (
-                    id SERIAL PRIMARY KEY,
-                    vacancy_name TEXT NOT NULL,
-                    url TEXT UNIQUE,
-                    requirements TEXT,
-                    salary NUMERIC,
-                    experience TEXT,
-                    remote BOOLEAN,
-                    company_id TEXT REFERENCES companies(company_id),
-                    company_name_real TEXT
-                );
-            """
-            )
-
+                # Таблица вакансий
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS vacancies (
+                        id SERIAL PRIMARY KEY,
+                        vacancy_name TEXT NOT NULL,
+                        url TEXT UNIQUE,
+                        requirements TEXT,
+                        salary_from NUMERIC,
+                        salary_to NUMERIC,
+                        experience TEXT,
+                        remote BOOLEAN,
+                        company_name_real TEXT,
+                        company_id TEXT REFERENCES companies(company_id)
+                    );
+                    """
+                )
             conn.commit()
-            print("Таблицы созданы успешно")
-        except Exception as e:
-            print(f"Ошибка при создании базы данных или таблиц: {e}")
-        finally:
-            if conn:
-                conn.close()
+        print("Таблицы созданы успешно")
+        conn.close()

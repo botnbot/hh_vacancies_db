@@ -1,12 +1,13 @@
 from typing import Optional
-from psycopg2.extensions import connection
+
 import psycopg2
+from psycopg2.extensions import connection
 
 from config import DB_CONFIG
+from src.company import Company
+from src.data_filler import DataFiller
 from src.database_creator import DatabaseCreator
 from src.db_manager import DBManager
-from src.data_filler import DataFiller
-from src.company import Company
 from src.vacancy import Vacancy
 from utils.helpers import confirm_action, safe_int_input
 
@@ -158,12 +159,12 @@ def main() -> None:
         print("=" * 50)
         print("СИСТЕМА УПРАВЛЕНИЯ ВАКАНСИЯМИ HH.RU")
         print("=" * 50)
-        print("1. Компании и количество вакансий")
+        print("1. Компании и количество вакансий компании")
         print("2. Все вакансии")
         print("3. Средняя зарплата")
         print("4. Вакансии с  зарплатой выше средней")
         print("5. Поиск вакансий по ключевым словам")
-        print("6. Вакансии по компании")
+        print("6. Вакансии компании")
         print("7. Настройка базы данных")
         print("8. Заполнить базу вакансиями (предустановленные компании)")
         print("9. Ввести до 10 компаний для заполнения базы")
@@ -202,6 +203,7 @@ def main() -> None:
             show_vacancies_by_company(db_manager)
         elif choice == 8:
             filler = DataFiller()
+            # Предустановленные компании
             companies = [
                 Company("Яндекс", "1740"),
                 Company("Сбер", "3529"),

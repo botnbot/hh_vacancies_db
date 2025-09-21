@@ -1,4 +1,5 @@
 from typing import Any, Optional
+
 import requests
 
 from src.base_api import BaseAPI
@@ -43,7 +44,7 @@ class HHAPI(BaseAPI):
             salary_to = salary_data.get("to")
             currency = salary_data.get("currency", "RUR")
 
-        experience = item.get("experience", {}).get("name", "не требуется")
+        experience = item.get("experience", {}).get("name", "не указан")
 
         schedule = item.get("schedule", {}) or {}
         remote = schedule.get("name") == "remote" or "удален" in title.lower()
@@ -58,7 +59,7 @@ class HHAPI(BaseAPI):
         )
 
         vacancy.company_id = company_id
-        vacancy.company_name_real = company_name
+        vacancy.company_name = company_name
         vacancy.currency = currency
 
         return vacancy
