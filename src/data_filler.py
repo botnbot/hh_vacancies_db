@@ -74,7 +74,7 @@ class DataFiller:
                     )
 
                 saved_count = db_manager.save_vacancies(vacancies)
-                print(f"Найдено вакансий: {len(vacancies)}, Сохранено: {saved_count}")
+                print(f"Найдено вакансий: {len(vacancies)}, Сохранено {saved_count} новых вакансий")
 
             conn.commit()
             print("\nДанные успешно загружены в БД")

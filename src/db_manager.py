@@ -51,7 +51,11 @@ class DBManager:
         Возвращает среднюю зарплату по всем вакансиям.
         В расчет берутся только вакансии, где указана хотя бы одна граница зарплаты.
         """
-        query = "SELECT AVG((salary_from + salary_to)/2.0) FROM vacancies WHERE salary_from IS NOT NULL OR salary_to IS NOT NULL;"
+        query = """
+        SELECT AVG((salary_from + salary_to)/2.0)
+        FROM vacancies
+        WHERE salary_from IS NOT NULL OR salary_to IS NOT NULL;
+        """
         with self.conn.cursor() as cur:
             cur.execute(query)
             avg_salary = cur.fetchone()[0]
@@ -164,8 +168,8 @@ class DBManager:
                         getattr(vac, "title", "Без названия"),
                         getattr(vac, "url", ""),
                         getattr(vac, "description", ""),
-                        getattr(vac, "salary_from", 0),
-                        getattr(vac, "salary_to", 0),
+                        getattr(vac, "salary_from"),
+                        getattr(vac, "salary_to"),
                         getattr(vac, "experience", ""),
                         getattr(vac, "remote", False),
                         getattr(vac, "company_name", "Не указано"),
