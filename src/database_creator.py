@@ -1,6 +1,5 @@
 import psycopg2
 from psycopg2 import sql
-
 from config import DB_CONFIG
 
 
@@ -25,6 +24,11 @@ class DatabaseCreator:
         self._create_database()
         self._create_tables()
 
+    def ensure_database(self):
+        """Создаёт базу и таблицы, если их нет."""
+        self._create_database()
+        self._create_tables()
+
     def _create_database(self):
         """Создаёт базу данных, если её нет."""
         try:
@@ -39,7 +43,7 @@ class DatabaseCreator:
             conn.close()
 
     def _create_tables(self):
-        """Создаёт таблицы companies и vacancies."""
+        """Создаёт таблицы companies и vacancies с актуальной схемой."""
         conn = self._get_connection(self.db_name)
         with conn:
             with conn.cursor() as cur:
@@ -68,8 +72,9 @@ class DatabaseCreator:
                         salary_to NUMERIC,
                         experience TEXT,
                         remote BOOLEAN,
-                        company_name_real TEXT,
-                        company_id TEXT REFERENCES companies(company_id)
+                        company_name_real TEXT NOT NULL,
+                        company_id TEXT REFERENCES companies(company_id),
+                        currency TEXT DEFAULT 'RUR'
                     );
                     """
                 )
